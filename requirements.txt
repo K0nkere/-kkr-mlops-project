@@ -4,8 +4,11 @@ pickle
 
 pandas
 numpy
+jupyter
 
-sklearn
+scikit-learn
+hyperopt
 xgboost
 
 mlflow
+seaborn
