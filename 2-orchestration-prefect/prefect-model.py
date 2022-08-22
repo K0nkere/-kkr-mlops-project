@@ -475,9 +475,5 @@ def main(current_date = "2015-7-21", periods = 5):
         print("$$$ Current is OK $$$")
 
 main()
-# DeploymentSpec(flow = main,
-#                 name = 'MLOps-project-auction-car-prices',
-#                 schedule = IntervalSchedule(interval = timedelta(minutes=5)), 
-#                 flow_runner = SubprocessFlowRunner(),
-#                 tags = ['ml-cpu'])
+
 
