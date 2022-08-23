@@ -10,19 +10,17 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 from sklearn.compose import ColumnTransformer
-# from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 
 from sklearn.feature_extraction import DictVectorizer
 
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.ensemble import RandomForestRegressor
 
-# import xgboost as xgb
 from xgboost import XGBRegressor
 
 import mlflow
@@ -35,14 +33,17 @@ from hyperopt.pyll import scope
 from prefect import task, flow
 from prefect.task_runners import SequentialTaskRunner
 
-from prefect.deployments import Deployment
+from prefect.deployments import Deployment   
 from prefect.orion.schemas.schedules import IntervalSchedule, CronSchedule
 # from prefect.flow_runners import SubprocessFlowRunner
 
-# mlflow.set_tracking_uri("http://127.0.0.1:5000/")
+MLFLOW_TRACKING_URI = 'sqlite:///../mlops-project.db'
 
+mlflow.set_tracking_uri("http://127.0.0.1:5000/")
+mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
+BUCKET = 'kkr-mlops-zoomcamp'
 
-def read_file(key, bucket='kkr-mlops-zoomcamp'):
+def read_file(key, bucket=BUCKET):
 
     session = boto3.session.Session()
     s3 = session.client(
@@ -160,10 +161,9 @@ def prepare_features(work_data, preprocessor = None):
 
 
 @task
-def params_search(MLFLOW_TRACKING_URI, train, valid, y_train, y_valid, current_date, models):
+def params_search(train, valid, y_train, y_valid, train_dataset_period, models):
     
-    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    # mlflow.set_tracking_uri("http://127.0.0.1:5000/")
+    # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
     best_models = []
 
@@ -176,7 +176,7 @@ def params_search(MLFLOW_TRACKING_URI, train, valid, y_train, y_valid, current_d
 
             with mlflow.start_run():
                 mlflow.set_tag("baseline", f"{baseline.__name__}")
-                mlflow.log_param("training-data", current_date[:7])
+                mlflow.log_param("train_dataset", train_dataset_period)
                 mlflow.log_param("parameters", params)
                 
                 print('$$$ Serching for the best parameters... $$$')
@@ -187,12 +187,13 @@ def params_search(MLFLOW_TRACKING_URI, train, valid, y_train, y_valid, current_d
                 print('$$$ Predicting on the valid dataset... $$$')
                 prediction_valid = training_model.predict(valid)
                 rmse_valid = mean_squared_error(y_valid, prediction_valid, squared = False)
+                mae_valid = mean_absolute_error(y_valid, prediction_valid)
+                mape_valid = mean_absolute_percentage_error(y_valid, prediction_valid)
 
-                print('$$$ RMSE on valid $$$', 
-                    rmse_valid
-                    )
-                mlflow.log_metric('rmse', rmse_valid)
-            
+                print(f'$$$ Errors on valid: RMSE {rmse_valid} MAE {mae_valid} MAPE {mape_valid} $$$', )
+                mlflow.log_metric('rmse_valid', rmse_valid)
+                mlflow.log_metric('mae_valid', mae_valid)
+                mlflow.log_metric('mape_valid', mape_valid)
 
             return {'loss': rmse_valid, 'status': STATUS_OK}
         
@@ -208,32 +209,31 @@ def params_search(MLFLOW_TRACKING_URI, train, valid, y_train, y_valid, current_d
 
         mlflow.end_run()
     
-    return best_models #ML_model(**space_eval(search_space, best_result))
+    return best_models
 
-@task
-def train_best_models(MLFLOW_TRACKING_URI, best_models_experiment, train, y_train, X_valid, y_valid, X_test, y_test, preprocessor, models):
 
-    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    # mlflow.set_tracking_uri("http://127.0.0.1:5000/")
-    mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
-    test_dataset_period = X_test["saledate"].max()[:7]
+#  @task
+def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, X_test, y_test, preprocessor, models, train_dataset_period):
+
+    # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    # mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
+
     best_pipelines = []
+    test_dataset_period = X_test["saledate"].max()[:7]
+    query = f'parameters.train_dataset = "{train_dataset_period}"'
 
     mlflow.autolog()
     for model in models:
     
         experiment = mlflow.set_experiment(f"{model.__name__}-models")
-        
-        # !!! to add
-        # query = 'tags.estimator_name="Ridge"'
+
         best_run = mlflow_client.search_runs(
                 experiment_ids = experiment.experiment_id,
                 run_view_type=ViewType.ACTIVE_ONLY,
                 max_results = 2,
-                # filter_string=query,
-                order_by = ['metrics.rmse ASC']
+                filter_string=query,
+                order_by = ['metrics.rmse_valid ASC']
             )
-        
         
         print(f"$$$ Training {model.__name__} with best params $$$")
 
@@ -257,9 +257,13 @@ def train_best_models(MLFLOW_TRACKING_URI, best_models_experiment, train, y_trai
 
             predict_test = pipeline.predict(X_test)
             rmse_test = mean_squared_error(y_test, predict_test, squared = False)
+            mae_test = mean_absolute_error(y_test, predict_test)
+            mape_test = mean_absolute_percentage_error(y_test, predict_test)
 
             mlflow.log_metric("rmse_valid", rmse_valid)
             mlflow.log_metric("rmse_test", rmse_test)
+            mlflow.log_metric('mae_test', mae_test)
+            mlflow.log_metric('mape_test', mape_test)
             mlflow.sklearn.log_model(pipeline, artifact_path='full-pipeline')
             
             best_pipelines.append((model.__name__, pipeline))
@@ -271,22 +275,20 @@ def train_best_models(MLFLOW_TRACKING_URI, best_models_experiment, train, y_trai
     return best_pipelines
 
 
-@task
-def model_to_registry(MLFLOW_TRACKING_URI, best_models_experiment, model_name, test_dataset_period):
+#  @task
+def model_to_registry(best_models_experiment, model_name, test_dataset_period):
 
-    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    # mlflow.set_tracking_uri("http://127.0.0.1:5000/")
-    mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
+    # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    # mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
     
     experiment = mlflow.set_experiment(best_models_experiment) #'Auction-car-prices-best-models')
 
-    # !!! to add
     query = f'parameters.test_dataset = "{test_dataset_period}"'
     best_model_run = mlflow_client.search_runs(
         experiment_ids=experiment.experiment_id,
         run_view_type=ViewType.ACTIVE_ONLY,
-        max_results=1,
         filter_string=query,
+        max_results=1,
         order_by=["metrics.rmse_test ASC"]
             
         )
@@ -303,12 +305,11 @@ def model_to_registry(MLFLOW_TRACKING_URI, best_models_experiment, model_name, t
     return registered_model
 
 
-@task
-def model_promotion(MLFLOW_TRACKING_URI, current_date, model_name, registered_model_version, to_stage):
+#  @task
+def model_promotion(current_date, model_name, registered_model_version, to_stage):
 
-    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    # mlflow.set_tracking_uri("http://127.0.0.1:5000/")
-    mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
+    # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    # mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
 
     promoted_model = mlflow_client.transition_model_version_stage(
                                 name = model_name,
@@ -327,37 +328,35 @@ def model_promotion(MLFLOW_TRACKING_URI, current_date, model_name, registered_mo
     return promoted_model
 
 
-def load_model(MLFLOW_TRACKING_URI, model_name, stage=None, version=None, run_id=None):
+def load_model(model_name, stage=None, version=None, run_id=None):
     
-    mlflow_client = MlflowClient(MLFLOW_TRACKING_URI)
-    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    # mlflow.set_tracking_uri("http://127.0.0.1:5000/")
+    # mlflow_client = MlflowClient(MLFLOW_TRACKING_URI)
+    # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
     versions = mlflow_client.get_latest_versions(
                 name=model_name,
                 stages=[stage]
                 )
-    
+
     try:
         model_uri = f"models:/{model_name}/{versions[0].current_stage}"
         model = mlflow.pyfunc.load_model(model_uri = model_uri)
 
         return model, versions[0].version
-
     except:
         print(f"$$$ There are no models at {stage} stage")
         
         return None, None
 
 
-@task
-def switch_model_of_production(MLFLOW_TRACKING_URI, X_test, y_test, model_name, current_date):
+#  @task
+def switch_model_of_production(X_test, y_test, model_name): #, current_date):
+    
     # mlflow.set_tracking_uri("http://127.0.0.1:5000/")
+    # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    # mlflow_client = MlflowClient(MLFLOW_TRACKING_URI)
 
-    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    mlflow_client = MlflowClient(MLFLOW_TRACKING_URI)
-
-    staging_model, staging_version = load_model(MLFLOW_TRACKING_URI, model_name, stage = "Staging")
+    staging_model, staging_version = load_model(model_name, stage = "Staging")
     if staging_model:
         staging_test_prediction = staging_model.predict(X_test)
         rmse_staging = mean_squared_error(staging_test_prediction, y_test, squared=False)
@@ -365,7 +364,7 @@ def switch_model_of_production(MLFLOW_TRACKING_URI, X_test, y_test, model_name, 
     else:
         rmse_staging = np.inf
 
-    production_model, production_version = load_model(MLFLOW_TRACKING_URI, model_name, stage = "Production")
+    production_model, production_version = load_model(model_name, stage = "Production")
     if production_model:
         production_test_prediction = production_model.predict(X_test)
         rmse_production = mean_squared_error(production_test_prediction, y_test, squared=False)
@@ -383,19 +382,19 @@ def switch_model_of_production(MLFLOW_TRACKING_URI, X_test, y_test, model_name, 
         return None
 
 
-@flow(task_runner = SequentialTaskRunner(), name = "MLOps-project-test")
-def main(current_date = "2015-7-21", periods = 5):
- 
-    MLFLOW_TRACKING_URI = 'sqlite:///../mlops-project.db'
+@flow(task_runner = SequentialTaskRunner())
+def main(current_date = "2015-7-21", periods = 4):
+    
     best_models_experiment = "Auction-car-prices-best-models"
     model_name = "Auction-car-prices-prediction"
-    
+
     train_data = load_data(current_date = current_date, periods = periods)
     X, y = na_filter(train_data)
 
     test_data = load_data(current_date = current_date)
     X_test, y_test = na_filter(test_data)
 
+    train_dataset_period = X["saledate"].max()[:7]
     test_dataset_period = X_test["saledate"].max()[:7]
 
     X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.25, random_state=42)
@@ -433,39 +432,37 @@ def main(current_date = "2015-7-21", periods = 5):
         }
 
     best_models = params_search(
-        MLFLOW_TRACKING_URI,
         train, valid,
         y_train, y_valid,
-        current_date,
+        train_dataset_period,
         models)
 
+    # print("$$$ Best params $$$\n", best_models)
 
     best_pipelines = train_best_models(
-        MLFLOW_TRACKING_URI,
         best_models_experiment,
         train, y_train,
         X_valid, y_valid,
         X_test, y_test,
         preprocessor,
-        models = models
+        models,
+        train_dataset_period
         )
 
-    registered_model = model_to_registry(MLFLOW_TRACKING_URI, best_models_experiment, model_name, test_dataset_period)
+    registered_model = model_to_registry(best_models_experiment, model_name, test_dataset_period)
+    # print(registered_model.run_id, registered_model.version)
 
     model_promotion(
-        MLFLOW_TRACKING_URI,
         current_date,
         model_name,
         registered_model_version=registered_model.version,
         to_stage = "Staging"
         )
-    
-    switch_to_version = switch_model_of_production(MLFLOW_TRACKING_URI, X_test, y_test, model_name, current_date)
-    
+
+    switch_to_version = switch_model_of_production(X_test, y_test, model_name) #, current_date)
+
     if switch_to_version:
-        # pass
         model_promotion(
-            MLFLOW_TRACKING_URI,
             current_date = current_date,
             model_name = model_name,
             registered_model_version = switch_to_version,
@@ -475,5 +472,8 @@ def main(current_date = "2015-7-21", periods = 5):
         print("$$$ Current is OK $$$")
 
 main()
-
-
+# Deployment(flow = main,
+#                 name = 'MLOps-project-auction-car-prices',
+#                 schedule = IntervalSchedule(interval = timedelta(minutes=5)), 
+#                 flow_runner = SubprocessFlowRunner(),
+#                 tags = ['ml-cpu'])

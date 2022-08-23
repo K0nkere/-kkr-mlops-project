@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+mlflow = "==1.28.0"
+cloudpickle = "==2.1.0"
+scikit-learn = "==1.0.2"
+boto3 = "==1.24.50"
+gunicorn = "*"
+flask = "*"
+typing-extensions = "==4.3.0"
+
+[dev-packages]
+ipykernel = "*"
+
+[requires]
+python_version = "3.9"
