@@ -1,4 +1,4 @@
-boto3
+boto3==1.24.50
 pyarrow
 pickle-mixin
 pandas
@@ -6,6 +6,7 @@ numpy
 jupyter
 scikit-learn==1.0.2
 hyperopt
-xgboost
-mlflow
+xgboost==1.6.1
+mlflow==1.28.0
 seaborn
+prefect==2.1.1

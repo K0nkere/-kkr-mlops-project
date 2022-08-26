@@ -195,12 +195,12 @@ def params_search(train, valid, y_train, y_valid, train_dataset_period, models):
                 mlflow.log_metric('mae_valid', mae_valid)
                 mlflow.log_metric('mape_valid', mape_valid)
 
-            return {'loss': rmse_valid, 'status': STATUS_OK}
+            return {'loss': mape_valid, 'status': STATUS_OK}
         
         best_result = fmin(fn = objective,
                     space = search_space,
                     algo = tpe.suggest,
-                    max_evals = 2, # int(2**(len(models[baseline].items())-2)), #3,
+                    max_evals = 20, # int(2**(len(models[baseline].items())-2)), #3,
                     trials = Trials(),
                     ) 
         
@@ -212,7 +212,7 @@ def params_search(train, valid, y_train, y_valid, train_dataset_period, models):
     return best_models
 
 
-#  @task
+@task
 def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, X_test, y_test, preprocessor, models, train_dataset_period):
 
     # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
@@ -232,7 +232,7 @@ def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, 
                 run_view_type=ViewType.ACTIVE_ONLY,
                 max_results = 2,
                 filter_string=query,
-                order_by = ['metrics.rmse_valid ASC']
+                order_by = ['metrics.mape_valid ASC']
             )
         
         print(f"$$$ Training {model.__name__} with best params $$$")
@@ -275,7 +275,7 @@ def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, 
     return best_pipelines
 
 
-#  @task
+@task
 def model_to_registry(best_models_experiment, model_name, test_dataset_period):
 
     # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
@@ -289,7 +289,7 @@ def model_to_registry(best_models_experiment, model_name, test_dataset_period):
         run_view_type=ViewType.ACTIVE_ONLY,
         filter_string=query,
         max_results=1,
-        order_by=["metrics.rmse_test ASC"]
+        order_by=["metrics.mape_test ASC"]
             
         )
     RUN_ID = best_model_run[0].info.run_id
@@ -305,7 +305,7 @@ def model_to_registry(best_models_experiment, model_name, test_dataset_period):
     return registered_model
 
 
-#  @task
+@task
 def model_promotion(current_date, model_name, registered_model_version, to_stage):
 
     # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
@@ -349,7 +349,7 @@ def load_model(model_name, stage=None, version=None, run_id=None):
         return None, None
 
 
-#  @task
+@task
 def switch_model_of_production(X_test, y_test, model_name): #, current_date):
     
     # mlflow.set_tracking_uri("http://127.0.0.1:5000/")
@@ -359,21 +359,23 @@ def switch_model_of_production(X_test, y_test, model_name): #, current_date):
     staging_model, staging_version = load_model(model_name, stage = "Staging")
     if staging_model:
         staging_test_prediction = staging_model.predict(X_test)
-        rmse_staging = mean_squared_error(staging_test_prediction, y_test, squared=False)
-        print(staging_version, rmse_staging)
+        # rmse_staging = mean_squared_error(staging_test_prediction, y_test, squared=False)
+        mape_staging = mean_absolute_percentage_error(staging_test_prediction, y_test)
+        print(staging_version, mape_staging)
     else:
-        rmse_staging = np.inf
+        mape_staging = np.inf
 
     production_model, production_version = load_model(model_name, stage = "Production")
     if production_model:
         production_test_prediction = production_model.predict(X_test)
-        rmse_production = mean_squared_error(production_test_prediction, y_test, squared=False)
-        print(production_version, rmse_production)
+        # rmse_production = mean_squared_error(production_test_prediction, y_test, squared=False)
+        mape_production = mean_absolute_percentage_error(production_test_prediction, y_test)
+        print(production_version, mape_production)
 
     else:
-        rmse_production = np.inf
+        mape_production = np.inf
 
-    if rmse_staging <= rmse_production:
+    if mape_staging <= mape_production:
         print(f"$$$ Need to switch models. Version {staging_version} is better than {production_version} $$$")
         return staging_version
         
@@ -383,7 +385,7 @@ def switch_model_of_production(X_test, y_test, model_name): #, current_date):
 
 
 @flow(task_runner = SequentialTaskRunner())
-def main(current_date = "2015-7-21", periods = 4):
+def main(current_date = "2015-6-21", periods = 5):
     
     best_models_experiment = "Auction-car-prices-best-models"
     model_name = "Auction-car-prices-prediction"
@@ -405,30 +407,30 @@ def main(current_date = "2015-7-21", periods = 4):
 
     print("$$$ Initializing parameters for baseline models... $$$")
     models = {
-        LinearRegression: {
-            "fit_intercept": hp.choice("fit_intercept", ('True', 'False'))
-            },
+        # LinearRegression: {
+        #     "fit_intercept": hp.choice("fit_intercept", ('True', 'False'))
+        #     },
         Ridge: {"alpha": hp.loguniform("alpha", -5, 5),
                 "fit_intercept": hp.choice("fit_intercept", ('True', 'False'))
             },
-        # RandomForestRegressor: {
-        #         'max_depth': scope.int(hp.quniform('max_depth', 1, 20, 1)),
-        #         'n_estimators': scope.int(hp.quniform('n_estimators', 10, 50, 1)),
-        #         'min_samples_split': scope.int(hp.quniform('min_samples_split', 2, 10, 1)),
-        #         'min_samples_leaf': scope.int(hp.quniform('min_samples_leaf', 1, 4, 1)),
-        #         'random_state': 42
-        #         },
-        # XGBRegressor: {
-        #         'max_depth': scope.int(hp.quniform('max_depth', 4, 100, 1)),
-        #         'learning_rate': hp.loguniform('learning_rate', -3, 0),
-        #         'reg_alpha': hp.loguniform('reg_alpha', -5, -1),
-        #         'reg_lambda': hp.loguniform('reg_lambda', -6, -1),
-        #         'max_child_weight': hp.loguniform('max_child_weight', -1, 3),
-        #         'num_boost_rounds': 100,
-        #         # 'early_stopping_rounds': 20,
-        #         'objective': 'reg:squarederror',
-        #         'seed': 42,
-        #         }
+        RandomForestRegressor: {
+                'max_depth': scope.int(hp.quniform('max_depth', 1, 20, 1)),
+                'n_estimators': scope.int(hp.quniform('n_estimators', 10, 50, 1)),
+                'min_samples_split': scope.int(hp.quniform('min_samples_split', 2, 10, 1)),
+                'min_samples_leaf': scope.int(hp.quniform('min_samples_leaf', 1, 4, 1)),
+                'random_state': 42
+                },
+        XGBRegressor: {
+                'max_depth': scope.int(hp.quniform('max_depth', 4, 100, 1)),
+                'learning_rate': hp.loguniform('learning_rate', -3, 0),
+                'reg_alpha': hp.loguniform('reg_alpha', -5, -1),
+                'reg_lambda': hp.loguniform('reg_lambda', -6, -1),
+                'max_child_weight': hp.loguniform('max_child_weight', -1, 3),
+                'num_boost_rounds': 100,
+                # 'early_stopping_rounds': 20,
+                'objective': 'reg:squarederror',
+                'seed': 42,
+                }
         }
 
     best_models = params_search(

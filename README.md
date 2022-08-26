@@ -14,3 +14,22 @@ Stage-3 Initial orchestrating with Prefect
 Stage-4 Deployment final model with Flask as a web-service 
 !!! Stage-5 Monitoring 
 !!! Stage-6 Tests
+
+Error on
+{
+    "year": 2013,
+    "make": "Mercedes-Benz",
+    "model": "SL-Class",
+    "trim": "SL550",
+    "body": "Convertible",
+    "transmission": NaN,
+    "vin": "wddjk7da0df012717",
+    "state": "pa",
+    "condition": 3.5,
+    "odometer": 11251.0,
+    "color": NaN,
+    "interior": NaN,
+    "seller": "mercedes-benz financial services",
+    "mmr": 72000,
+    "saledate": "2015-05-28 02:00:00"
+}
