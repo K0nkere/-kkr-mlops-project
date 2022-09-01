@@ -1,0 +1,16 @@
+scikit-learn==1.0.2
+xgboost==1.6.1
+mlflow==1.28.0
+boto3==1.24.50
+Flask==2.2.2
+
+requests~=2.26.0
+typing-extensions==4.3.0
+psutil==5.9.1
+dataclasses==0.6
+pandas~=1.1.5
+Werkzeug==2.2.2
+prometheus_client~=0.11.0
+pyyaml~=5.4.1
+evidently
+pymongo

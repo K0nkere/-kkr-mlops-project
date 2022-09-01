@@ -1,0 +1,30 @@
+datasets:
+  car-prices:
+    column_mapping:
+      categorical_features:
+        - 'year'
+        - 'make'
+        - 'model'
+        - 'trim'
+        - 'body'
+        - 'transmission'
+        - 'color'
+        - 'interior'
+      numerical_features:
+        - 'condition'
+        - 'odometer'
+        - 'mmr'
+    data_format:
+      header: true
+      separator: ','
+    monitors:
+      - data_drift
+      - num_target_drift
+    reference_file: ./datasets/car-prices-test.parquet
+service:
+  calculation_period_sec: 2
+  min_reference_size: 30
+  moving_reference: false
+  datasets_path: datasets
+  use_reference: true
+  window_size: 5
