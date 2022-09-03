@@ -12,5 +12,5 @@ pandas~=1.1.5
 Werkzeug==2.2.2
 prometheus_client~=0.11.0
 pyyaml~=5.4.1
-evidently
-pymongo
+evidently==0.1.56.dev0
+pymongo==4.1.1
