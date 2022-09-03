@@ -37,10 +37,13 @@ from prefect.deployments import Deployment
 from prefect.orion.schemas.schedules import IntervalSchedule, CronSchedule
 # from prefect.flow_runners import SubprocessFlowRunner
 
-MLFLOW_TRACKING_URI = 'sqlite:///../mlops-project.db'
+# MLFLOW_TRACKING_URI = 'sqlite:///../mlops-project.db'
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000/")
+MLFLOW_TRACKING_URI = "http://127.0.0.1:5001/"
+
+mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
+
 BUCKET = 'kkr-mlops-zoomcamp'
 
 def read_file(key, bucket=BUCKET):
@@ -162,8 +165,6 @@ def prepare_features(work_data, preprocessor = None):
 
 @task
 def params_search(train, valid, y_train, y_valid, train_dataset_period, models):
-    
-    # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
     best_models = []
 
@@ -214,9 +215,6 @@ def params_search(train, valid, y_train, y_valid, train_dataset_period, models):
 
 @task
 def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, X_test, y_test, preprocessor, models, train_dataset_period):
-
-    # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    # mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
 
     best_pipelines = []
     test_dataset_period = X_test["saledate"].max()[:7]
@@ -277,9 +275,6 @@ def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, 
 
 @task
 def model_to_registry(best_models_experiment, model_name, test_dataset_period):
-
-    # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    # mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
     
     experiment = mlflow.set_experiment(best_models_experiment) #'Auction-car-prices-best-models')
 
@@ -308,9 +303,6 @@ def model_to_registry(best_models_experiment, model_name, test_dataset_period):
 @task
 def model_promotion(current_date, model_name, registered_model_version, to_stage):
 
-    # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    # mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
-
     promoted_model = mlflow_client.transition_model_version_stage(
                                 name = model_name,
                                 version = registered_model_version,
@@ -329,9 +321,6 @@ def model_promotion(current_date, model_name, registered_model_version, to_stage
 
 
 def load_model(model_name, stage=None, version=None, run_id=None):
-    
-    # mlflow_client = MlflowClient(MLFLOW_TRACKING_URI)
-    # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
     versions = mlflow_client.get_latest_versions(
                 name=model_name,
@@ -351,10 +340,6 @@ def load_model(model_name, stage=None, version=None, run_id=None):
 
 @task
 def switch_model_of_production(X_test, y_test, model_name): #, current_date):
-    
-    # mlflow.set_tracking_uri("http://127.0.0.1:5000/")
-    # mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    # mlflow_client = MlflowClient(MLFLOW_TRACKING_URI)
 
     staging_model, staging_version = load_model(model_name, stage = "Staging")
     if staging_model:
@@ -385,7 +370,7 @@ def switch_model_of_production(X_test, y_test, model_name): #, current_date):
 
 
 @flow(task_runner = SequentialTaskRunner())
-def main(current_date = "2015-6-21", periods = 5):
+def main(current_date = "2015-7-21", periods = 5):
     
     best_models_experiment = "Auction-car-prices-best-models"
     model_name = "Auction-car-prices-prediction"
@@ -413,24 +398,24 @@ def main(current_date = "2015-6-21", periods = 5):
         Ridge: {"alpha": hp.loguniform("alpha", -5, 5),
                 "fit_intercept": hp.choice("fit_intercept", ('True', 'False'))
             },
-        RandomForestRegressor: {
-                'max_depth': scope.int(hp.quniform('max_depth', 1, 20, 1)),
-                'n_estimators': scope.int(hp.quniform('n_estimators', 10, 50, 1)),
-                'min_samples_split': scope.int(hp.quniform('min_samples_split', 2, 10, 1)),
-                'min_samples_leaf': scope.int(hp.quniform('min_samples_leaf', 1, 4, 1)),
-                'random_state': 42
-                },
-        XGBRegressor: {
-                'max_depth': scope.int(hp.quniform('max_depth', 4, 100, 1)),
-                'learning_rate': hp.loguniform('learning_rate', -3, 0),
-                'reg_alpha': hp.loguniform('reg_alpha', -5, -1),
-                'reg_lambda': hp.loguniform('reg_lambda', -6, -1),
-                'max_child_weight': hp.loguniform('max_child_weight', -1, 3),
-                'num_boost_rounds': 100,
-                # 'early_stopping_rounds': 20,
-                'objective': 'reg:squarederror',
-                'seed': 42,
-                }
+        # RandomForestRegressor: {
+        #         'max_depth': scope.int(hp.quniform('max_depth', 1, 20, 1)),
+        #         'n_estimators': scope.int(hp.quniform('n_estimators', 10, 50, 1)),
+        #         'min_samples_split': scope.int(hp.quniform('min_samples_split', 2, 10, 1)),
+        #         'min_samples_leaf': scope.int(hp.quniform('min_samples_leaf', 1, 4, 1)),
+        #         'random_state': 42
+        #         },
+        # XGBRegressor: {
+        #         'max_depth': scope.int(hp.quniform('max_depth', 4, 100, 1)),
+        #         'learning_rate': hp.loguniform('learning_rate', -3, 0),
+        #         'reg_alpha': hp.loguniform('reg_alpha', -5, -1),
+        #         'reg_lambda': hp.loguniform('reg_lambda', -6, -1),
+        #         'max_child_weight': hp.loguniform('max_child_weight', -1, 3),
+        #         'num_boost_rounds': 100,
+        #         # 'early_stopping_rounds': 20,
+        #         'objective': 'reg:squarederror',
+        #         'seed': 42,
+        #         }
         }
 
     best_models = params_search(
@@ -439,7 +424,6 @@ def main(current_date = "2015-6-21", periods = 5):
         train_dataset_period,
         models)
 
-    # print("$$$ Best params $$$\n", best_models)
 
     best_pipelines = train_best_models(
         best_models_experiment,

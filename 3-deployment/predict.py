@@ -10,7 +10,7 @@ PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP")
 print(f"... Connecting to MLFlow Server on {PUBLIC_SERVER_IP} ...")
 
 # MLFLOW_TRACKING_URI = 'sqlite:///../mlops-project.db'
-MLFLOW_TRACKING_URI = f"http://{PUBLIC_SERVER_IP}:5000"
+MLFLOW_TRACKING_URI = f"http://{PUBLIC_SERVER_IP}:5001"
 # mlflow.set_tracking_uri("http://127.0.0.1:5000/")
 
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)

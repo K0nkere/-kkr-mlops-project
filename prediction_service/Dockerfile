@@ -8,7 +8,7 @@ COPY requirements.txt requirements.txt
 # ENV AWS_DEFAULT_REGION=ru-central1
 # ENV AWS_ACCESS_KEY_ID=<key_id>
 # ENV AWS_SECRET_ACCESS_KEY=<key>
-# ENV PUBLIC_SERVER_IP=84.201.155.166
+# ENV PUBLIC_SERVER_IP=51.250.28.168
 
 RUN pip3 install -r requirements.txt
 
