@@ -1,0 +1,43 @@
+###
+### A complete description of a Prefect Deployment for flow 'sending-stream'
+###
+name: sending_stream
+description: null
+version: b3182e0988b2da6da941085fea8967f0
+# The work queue that will handle this deployment's runs
+work_queue_name: streaming-data
+tags: []
+parameters: {"current_date": "2015-6-17", "periods": 0}
+schedule: null
+infra_overrides: {}
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command:
+  - python
+  - -m
+  - prefect.engine
+  stream_output: true
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: sending-stream
+manifest_path: null
+storage: null
+path: /home/kkr/notebooks/project
+entrypoint: send_data.py:sending_stream
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties:
+    current_date:
+      title: current_date
+    periods:
+      title: periods
+  required:
+  - current_date
+  - periods
+  definitions: null

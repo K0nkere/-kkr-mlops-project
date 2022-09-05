@@ -24,7 +24,7 @@ services:
       AWS_DEFAULT_REGION: "ru-central1"
       AWS_ACCESS_KEY_ID: "YCAJEwNTUy1TB_cku57IXUNjt"
       AWS_SECRET_ACCESS_KEY: "YCPbwZrpsvkpG4LnrVQwRCVIahXsRHAXq_o_FbIA"
-      PUBLIC_SERVER_IP: "51.250.28.168"
+      PUBLIC_SERVER_IP: "51.250.23.82"
     ports:
       - "9696:9696"
     networks:

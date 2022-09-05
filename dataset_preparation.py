@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[7]:
-
-
 import numpy as np
 import pandas as pd
 
@@ -34,10 +28,3 @@ def main():
 
 if __name__=="__main__":
     main()
-
-
-# In[10]:
-
-
-
-

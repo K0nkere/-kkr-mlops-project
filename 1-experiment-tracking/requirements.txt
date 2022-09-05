@@ -1,11 +1,11 @@
 boto3==1.24.50
 pyarrow
 pickle-mixin
-pandas
+pandas==1.1.5
 numpy
 jupyter
 scikit-learn==1.0.2
-hyperopt
+hyperopt==0.2.7
 xgboost==1.6.1
 mlflow==1.28.0
 seaborn
