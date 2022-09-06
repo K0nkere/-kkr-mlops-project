@@ -8,8 +8,9 @@ from mlflow.tracking import MlflowClient
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP", "51.250.23.82")
-BUCKET = 'kkr-mlops-zoomcamp'
+PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP", "51.250.101.100")
+# PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP")
+BUCKET = os.getenv("BUCKET", 'kkr-mlops-zoomcamp')
 
 
 def read_file(key, bucket=BUCKET):

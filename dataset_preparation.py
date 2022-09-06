@@ -5,7 +5,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 def main():
-    data = pd.read_csv('./dataset/car_prices.csv',
+    data = pd.read_csv('./datasets/car_prices.csv',
                         sep=',',
                         error_bad_lines=False,
                         parse_dates=['saledate'])
@@ -23,7 +23,7 @@ def main():
         print(filename,
             period + relativedelta(months=1),
             np.sum(mask))
-        data[mask].to_csv(f"./dataset/{filename}.csv", sep=",", index=False)
+        data[mask].to_csv(f"./datasets/{filename}.csv", sep=",", index=False)
         period = period + relativedelta(months=1)
 
 if __name__=="__main__":

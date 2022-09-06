@@ -1,7 +1,8 @@
+import os
 import json
 import boto3
-import pickle
-import pyarrow
+# import pickle
+# import pyarrow
 
 import numpy as np
 import pandas as pd
@@ -39,26 +40,34 @@ from prefect.orion.schemas.schedules import IntervalSchedule, CronSchedule
 
 # MLFLOW_TRACKING_URI = 'sqlite:///../mlops-project.db'
 
-MLFLOW_TRACKING_URI = "http://127.0.0.1:5001/"
+BUCKET = os.getenv("BUCKET", 'kkr-mlops-zoomcamp')
+PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP", "51.250.101.100")
+# MLFLOW_TRACKING_URI = "http://127.0.0.1:5001/"
+MLFLOW_TRACKING_URI = f"http://{PUBLIC_SERVER_IP}:5001/"
 
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
 
-BUCKET = 'kkr-mlops-zoomcamp'
+
 
 def read_file(key, bucket=BUCKET):
+    
+    try:
+        session = boto3.session.Session()
+        s3 = session.client(
+            service_name='s3',
+            endpoint_url='https://storage.yandexcloud.net',
+            region_name='ru-central1',
+            # aws_access_key_id = "id",
+            # aws_secret_access_key = "key")
+        )
+        obj = s3.get_object(Bucket=bucket, Key=key)
 
-    session = boto3.session.Session()
-    s3 = session.client(
-        service_name='s3',
-        endpoint_url='https://storage.yandexcloud.net',
-        region_name='ru-central1',
-        # aws_access_key_id = "id",
-        # aws_secret_access_key = "key")
-    )
-    obj = s3.get_object(Bucket=bucket, Key=key)
+        data = pd.read_csv(obj['Body'], sep=",")
 
-    data = pd.read_csv(obj['Body'], sep=",")
+    except:
+        print(f"... Failed to connect to {BUCKET} bucket, getting data from local storage ...")
+        data = pd.read_csv(f"../{key}", sep=",", na_values='NaN')
 
     return data
 
@@ -70,7 +79,7 @@ def load_data(current_date = "2015-5-17", periods = 1):
     
     if periods == 1:
         date_file = dt_current + relativedelta(months = - 1)
-        print(f"Getting TEST data for {date_file.year}-{date_file.month} period")
+        print(f"... Getting TEST data for {date_file.year}-{date_file.month} period ...")
         test_data = read_file(key = f"datasets/car-prices-{date_file.year}-{date_file.month}.csv")
 
         return test_data
@@ -81,9 +90,9 @@ def load_data(current_date = "2015-5-17", periods = 1):
             date_file = dt_current + relativedelta(months = - i)
             try:
                 data = read_file(key = f"datasets/car-prices-{date_file.year}-{date_file.month}.csv")
-                print(f"Getting TRAIN data for {date_file.year}-{date_file.month} period")
+                print(f"... Getting TRAIN data for {date_file.year}-{date_file.month} period ...")
             except:
-                print(f"Cannot find file car-prices-{date_file.year}-{date_file.month}.csv",
+                print(f"... Cannot find file car-prices-{date_file.year}-{date_file.month}.csv ...",
                     "using blank")
                 data = None
                 
@@ -180,18 +189,18 @@ def params_search(train, valid, y_train, y_valid, train_dataset_period, models):
                 mlflow.log_param("train_dataset", train_dataset_period)
                 mlflow.log_param("parameters", params)
                 
-                print('$$$ Serching for the best parameters... $$$')
+                print('... Serching for the best parameters ... ')
 
                 training_model = baseline(**params)
                 training_model.fit(train, y_train)
 
-                print('$$$ Predicting on the valid dataset... $$$')
+                print('... Predicting on the valid dataset ...')
                 prediction_valid = training_model.predict(valid)
                 rmse_valid = mean_squared_error(y_valid, prediction_valid, squared = False)
                 mae_valid = mean_absolute_error(y_valid, prediction_valid)
                 mape_valid = mean_absolute_percentage_error(y_valid, prediction_valid)
 
-                print(f'$$$ Errors on valid: RMSE {rmse_valid} MAE {mae_valid} MAPE {mape_valid} $$$', )
+                print(f'... Errors on valid: RMSE {rmse_valid} MAE {mae_valid} MAPE {mape_valid} ...', )
                 mlflow.log_metric('rmse_valid', rmse_valid)
                 mlflow.log_metric('mae_valid', mae_valid)
                 mlflow.log_metric('mape_valid', mape_valid)
@@ -205,7 +214,7 @@ def params_search(train, valid, y_train, y_valid, train_dataset_period, models):
                     trials = Trials(),
                     ) 
         
-        print("$$$ Best model $$$\n", baseline(**space_eval(search_space, best_result)))
+        print("... Best model ...\n", baseline(**space_eval(search_space, best_result)))
         best_models.append(baseline(**space_eval(search_space, best_result)))
 
         mlflow.end_run()
@@ -233,7 +242,7 @@ def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, 
                 order_by = ['metrics.mape_valid ASC']
             )
         
-        print(f"$$$ Training {model.__name__} with best params $$$")
+        print(f"... Training {model.__name__} with best params ...")
 
         mlflow.set_experiment(best_models_experiment) #"Auction-car-prices-best-models")
     
@@ -266,7 +275,7 @@ def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, 
             
             best_pipelines.append((model.__name__, pipeline))
 
-            print("$$$ {:} MODEL was saved as a RUN of {:} $$$".format(model.__name__, best_models_experiment))
+            print("... {:} MODEL was saved as a RUN of {:} ...".format(model.__name__, best_models_experiment))
 
             mlflow.end_run()
 
@@ -290,12 +299,12 @@ def model_to_registry(best_models_experiment, model_name, test_dataset_period):
     RUN_ID = best_model_run[0].info.run_id
     model_uri = "runs:/{:}/full-pipeline".format(RUN_ID)
    
-    print(f"$$$ Registering model {model_name} $$$")
+    print(f"... Registering model {model_name} ...")
     registered_model = mlflow.register_model(
             model_uri=model_uri,
             name = model_name
         )
-    print(f"$$$ Model RUN_ID {registered_model.run_id} was registered as version {registered_model.version} at {registered_model.current_stage} stage $$$")
+    print(f"... Model RUN_ID {registered_model.run_id} was registered as version {registered_model.version} at {registered_model.current_stage} stage ...")
     
     return registered_model
 
@@ -315,7 +324,7 @@ def model_promotion(current_date, model_name, registered_model_version, to_stage
         version = registered_model_version,
         description=f'The model was promoted to {to_stage} {current_date}'
         )
-    print(f"$$$ Model {model_name} version {registered_model_version} was promoted to {to_stage} {current_date} $$$")
+    print(f"... Model {model_name} version {registered_model_version} was promoted to {to_stage} {current_date} ...")
 
     return promoted_model
 
@@ -333,7 +342,7 @@ def load_model(model_name, stage=None, version=None, run_id=None):
 
         return model, versions[0].version
     except:
-        print(f"$$$ There are no models at {stage} stage")
+        print(f"... There are no models at {stage} stage ...")
         
         return None, None
 
@@ -346,7 +355,7 @@ def switch_model_of_production(X_test, y_test, model_name): #, current_date):
         staging_test_prediction = staging_model.predict(X_test)
         # rmse_staging = mean_squared_error(staging_test_prediction, y_test, squared=False)
         mape_staging = mean_absolute_percentage_error(staging_test_prediction, y_test)
-        print(staging_version, mape_staging)
+        print(f"... MAPE={mape_staging} for the model version {staging_version} ...")
     else:
         mape_staging = np.inf
 
@@ -355,17 +364,18 @@ def switch_model_of_production(X_test, y_test, model_name): #, current_date):
         production_test_prediction = production_model.predict(X_test)
         # rmse_production = mean_squared_error(production_test_prediction, y_test, squared=False)
         mape_production = mean_absolute_percentage_error(production_test_prediction, y_test)
-        print(production_version, mape_production)
+        print(f"... MAPE={mape_production} for the model version {production_version} ...")
 
     else:
         mape_production = np.inf
 
     if mape_staging <= mape_production:
-        print(f"$$$ Need to switch models. Version {staging_version} is better than {production_version} $$$")
+        print(f"... Need to switch models. Version {staging_version} is better than {production_version} ...")
+
         return staging_version
         
     else:
-        print(f"$$$ No need to switch models. Version {production_version} is the best $$$")
+        print(f"... No need to switch models. Version {production_version} is the best ...")
         return None
 
 
@@ -386,11 +396,11 @@ def main(current_date = "2015-7-21", periods = 5):
 
     X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.25, random_state=42)
 
-    print("$$$ Training preprocessor... $$$")
+    print("... Training preprocessor ...")
     train, preprocessor = prepare_features(X_train, preprocessor = None )
     valid, _  = prepare_features(X_valid, preprocessor)
 
-    print("$$$ Initializing parameters for baseline models... $$$")
+    print("... Initializing parameters for baseline models ...")
     models = {
         # LinearRegression: {
         #     "fit_intercept": hp.choice("fit_intercept", ('True', 'False'))
@@ -436,7 +446,6 @@ def main(current_date = "2015-7-21", periods = 5):
         )
 
     registered_model = model_to_registry(best_models_experiment, model_name, test_dataset_period)
-    # print(registered_model.run_id, registered_model.version)
 
     model_promotion(
         current_date,
@@ -445,7 +454,7 @@ def main(current_date = "2015-7-21", periods = 5):
         to_stage = "Staging"
         )
 
-    switch_to_version = switch_model_of_production(X_test, y_test, model_name) #, current_date)
+    switch_to_version = switch_model_of_production(X_test, y_test, model_name)
 
     if switch_to_version:
         model_promotion(
@@ -454,8 +463,9 @@ def main(current_date = "2015-7-21", periods = 5):
             registered_model_version = switch_to_version,
             to_stage="Production"
             )
+        
     else:
-        print("$$$ Current is OK $$$")
+        print("... Current model is OK ...")
 
 # main()
 # Deployment(flow = main,

@@ -1,4 +1,4 @@
-from textwrap import indent
+import os
 import requests
 import numpy as np
 import pandas as pd
@@ -12,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 import prefect
 from prefect import task, flow
 
-BUCKET = "kkr-mlops-zoomcamp"
+BUCKET = os.getenv("BUCKET", 'kkr-mlops-zoomcamp')
 url = "http://127.0.0.1:9696/prediction"
 signal_url = "http://127.0.0.1:9898/manager"
 
@@ -129,5 +129,5 @@ def sending_stream(current_date, periods):
                     # data=json.dumps(signal)
                     )
 
-sending_stream(current_date = "2015-7-5", periods=0)
+sending_stream(current_date = "2015-05-5", periods=0)
 

@@ -1,6 +1,5 @@
 import json
 import os
-from pdb import Pdb
 import pickle
 import pandas as pd
 
@@ -81,7 +80,7 @@ def save_report(result):
 
 @task
 def save_html_report(result, current_date):
-    result[1].save(f"evidently_report_example_{current_date}.html")
+    result[1].save(f"evidently_report_{current_date}.html")
 
 
 @flow
