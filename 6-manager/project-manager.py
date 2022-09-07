@@ -8,6 +8,7 @@ import prefect_monitoring_report
 import prefect_model
 
 from flask import Flask, request, jsonify
+
 app = Flask("Model-manager")
 
 @app.route("/manager", methods=['POST'])
@@ -19,7 +20,7 @@ def project_manager():
     
     report = prefect_monitoring_report.batch_analyze(
                 current_date = signal['current_date'],
-                target_file = '../target.csv'
+                target_file = '../targets/target.csv'
                 )[0]
     
     retrain = report['data_drift']['data']['metrics']['prediction']['drift_detected']

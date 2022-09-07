@@ -6,11 +6,11 @@ RUN pip install pipenv
 WORKDIR /app
 COPY ["Pipfile", "Pipfile.lock", ".env", "./"]
 
-ENV MLFLOW_S3_ENDPOINT_URL=https://storage.yandexcloud.net
-ENV AWS_DEFAULT_REGION=ru-central1
-ENV AWS_ACCESS_KEY_ID=YCAJEwNTUy1TB_cku57IXUNjt
-ENV AWS_SECRET_ACCESS_KEY=YCPbwZrpsvkpG4LnrVQwRCVIahXsRHAXq_o_FbIA
-ENV PUBLIC_SERVER_IP=51.250.101.100
+# ENV MLFLOW_S3_ENDPOINT_URL=https://storage.yandexcloud.net
+# ENV AWS_DEFAULT_REGION=ru-central1
+# ENV AWS_ACCESS_KEY_ID=<key_id>
+# ENV AWS_SECRET_ACCESS_KEY=<key>
+# ENV PUBLIC_SERVER_IP=51.250.101.100
 
 RUN pipenv install --system --deploy
 

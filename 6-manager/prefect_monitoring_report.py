@@ -80,11 +80,11 @@ def save_report(result):
 
 @task
 def save_html_report(result, current_date):
-    result[1].save(f"evidently_report_{current_date}.html")
+    result[1].save(f"../reports/evidently_report_{current_date}.html")
 
 
 @flow
-def batch_analyze(current_date='2015-6-17', target_file = '../target.csv'):
+def batch_analyze(current_date='2015-6-17', target_file = '../targets/target.csv'):
     # upload_target("../target.csv")
     ref_data = load_reference_data(current_date, periods=0)
     data = fetch_data(target_file)

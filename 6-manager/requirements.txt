@@ -4,7 +4,6 @@ boto3==1.24.50
 
 pandas==1.1.5
 numpy
-jupyter
 
 scikit-learn==1.0.2
 hyperopt==0.2.7
@@ -15,7 +14,8 @@ prefect==2.1.1
 
 mlflow==1.28.0
 Flask==2.2.2
-prefect==2.1.1
+gunicorn==20.1.0
+
 evidently==0.1.56.dev0
 pymongo==4.1.1
 # prometheus_client~=0.11.0

@@ -99,7 +99,7 @@ def sending_stream(current_date, periods):
     #             return o.isoformat()
     #         return json.JSONEncoder.default(self, o)
 
-    with open('./target.csv', 'w') as f_in:        
+    with open('./targets/target.csv', 'w') as f_in:        
         for index in test_data:
 
             response = requests.post(
