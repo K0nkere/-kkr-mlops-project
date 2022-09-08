@@ -11,7 +11,7 @@ RUN pipenv install --system --deploy
 
 # RUN pip install "uvicorn[standard]" gunicorn
 
-COPY ["batch_service.py", "prefect_model.py", "prefect_monitoring_report.py","project-manager.py", "./"]
+COPY ["backend_services.py", "prefect_model.py", "prefect_monitoring_report.py","project-manager.py", "./"]
 
 # ENV PUBLIC_SERVER_IP=51.250.27.103
 # ENV MLFLOW_S3_ENDPOINT_URL=https://storage.yandexcloud.net

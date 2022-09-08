@@ -1,0 +1,43 @@
+###
+### A complete description of a Prefect Deployment for flow 'main'
+###
+name: training-model
+description: null
+version: 6013e46373432d0047458f417661bd39
+# The work queue that will handle this deployment's runs
+work_queue_name: project-manager
+tags: []
+parameters: {}
+schedule: null
+infra_overrides: {}
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command:
+  - python
+  - -m
+  - prefect.engine
+  stream_output: true
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: main
+manifest_path: null
+storage: null
+path: /home/kkr/notebooks/project/orchestration_manager
+entrypoint: prefect_model.py:main
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties:
+    current_date:
+      title: current_date
+      default: 2015-7-21
+    periods:
+      title: periods
+      default: 5
+  required: null
+  definitions: null

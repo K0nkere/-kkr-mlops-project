@@ -3,7 +3,7 @@ import os
 import pickle
 import pandas as pd
 
-import batch_service
+import backend_services
 
 from prefect import flow, task
 from pymongo import MongoClient
@@ -33,9 +33,9 @@ from evidently.model_profile.sections import DataDriftProfileSection, Regression
 @task
 def load_reference_data(current_date, periods=0):
 
-    model = batch_service.load_model()
+    model = backend_services.load_model()
    
-    reference_data, target = batch_service.na_filter(batch_service.load_data(current_date, periods))
+    reference_data, target = backend_services.na_filter(backend_services.load_data(current_date, periods))
    
     reference_data['prediction'] = model.predict(reference_data)
     reference_data['target'] = target.values

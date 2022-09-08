@@ -8,7 +8,7 @@ from mlflow.tracking import MlflowClient
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP", "51.250.101.100")
+PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP")
 # PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP")
 BUCKET = os.getenv("BUCKET", 'kkr-mlops-zoomcamp')
 
@@ -81,37 +81,39 @@ def na_filter(data):
 
 
 def load_model():
-        MLFLOW_TRACKING_URI = f"http://{PUBLIC_SERVER_IP}:5001"
-        model_name = "Auction-car-prices-prediction"
+    MLFLOW_TRACKING_URI = f"http://{PUBLIC_SERVER_IP}:5001"
+    model_name = "Auction-car-prices-prediction"
 
-        print(f"... Connecting to MLFlow Server on {MLFLOW_TRACKING_URI} ...")
-        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    print(f"... Connecting to MLFlow Server on {MLFLOW_TRACKING_URI} ...")
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
-        if PUBLIC_SERVER_IP:
+    if PUBLIC_SERVER_IP:
+        
+        model_uri = f"models:/{model_name}/production"
+
+        print("... Loading prediction model from production stage ...")
+
+        model = mlflow.pyfunc.load_model(model_uri=model_uri)
+
+        versions = mlflow.MlflowClient(MLFLOW_TRACKING_URI).get_latest_versions(
+                name =  model_name,
+                stages = ["Production"]
+            )
+        
+        version = versions[0].version
+        run_id = versions[0].run_id
+        print(f"Version: {version} Run_id: {run_id}")
+
+    else:
+        pass
             
-            model_uri = f"models:/{model_name}/production"
-
-            print("... Loading prediction model from production stage ...")
-
-            model = mlflow.pyfunc.load_model(model_uri=model_uri)
-
-            versions = mlflow.MlflowClient(MLFLOW_TRACKING_URI).get_latest_versions(
-                    name =  model_name,
-                    stages = ["Production"]
-                )
-            
-            version = versions[0].version
-            run_id = versions[0].run_id
-            print(f"Version: {version} Run_id: {run_id}")
-
-        else:
-            pass
-                
-        return model
+    return model
 
 
-def prediction(record):
-    model = load_model()
+def prediction(record, model = None):
+
+    if not model:
+        model = load_model()
 
     record_df = pd.DataFrame([record])
     price_prediction = model.predict(record_df)

@@ -91,7 +91,8 @@ def sending_stream(current_date, periods):
 
     test_data, selling_price = na_filter(load_data(current_date, periods))
     test_data.index = range(len(test_data))
-    test_data = test_data.replace(np.nan, None).to_dict(orient='index')
+    # test_data = test_data.replace(np.nan, None).to_dict(orient='index')
+    test_data = test_data.replace({np.nan: None}).to_dict(orient='index')
 
     # class DateTimeEncoder(json.JSONEncoder):
     #     def default(self, o):
@@ -120,14 +121,17 @@ def sending_stream(current_date, periods):
     f_in.close()
 
     signal = {"current_date": current_date, "finished": True}
+    
+    try:
+        response = requests.post(
+                        signal_url,
+                        json = signal
+                        # headers={"Content-Type": "application/json"},
+                        # data=json.dumps(test_data[index], cls=DateTimeEncoder)
+                        # data=json.dumps(signal)
+                        )
+    except:
+        print("... Cant connect to manager service. Was it run? ...")
 
-    response = requests.post(
-                    signal_url,
-                    json = signal
-                    # headers={"Content-Type": "application/json"},
-                    # data=json.dumps(test_data[index], cls=DateTimeEncoder)
-                    # data=json.dumps(signal)
-                    )
-
-sending_stream(current_date = "2015-05-5", periods=0)
+sending_stream(current_date = "2015-06-5", periods=0)
 

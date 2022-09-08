@@ -51,7 +51,9 @@ mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
 
 
 def read_file(key, bucket=BUCKET):
-    
+    """
+    Reads file from bucket or local storage
+    """
     try:
         session = boto3.session.Session()
         s3 = session.client(
@@ -224,6 +226,7 @@ def params_search(train, valid, y_train, y_valid, train_dataset_period, models):
 
 @task
 def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, X_test, y_test, preprocessor, models, train_dataset_period):
+# pylint: disable = too-many-arguments
 
     best_pipelines = []
     test_dataset_period = X_test["saledate"].max()[:7]

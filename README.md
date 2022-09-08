@@ -15,6 +15,17 @@ Stage-4 Deployment final model with Flask as a web-service
 !!! Stage-5 Monitoring 
 !!! Stage-6 Tests
 
+Deployment
+insert correct values into .env
+check ports for docker-compose is empty
+    docker ps
+        docker kill <container_id>
+check ports for tunneling in VSCode is open
+5001 for MLFlow
+4200 for Prefect Orion
+3000 for grafana
+
+
 Error on
 {
     "year": 2013,
