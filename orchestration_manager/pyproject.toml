@@ -1,9 +1,0 @@
-[tool.pylint.messages_control]
-
-disable = [
-    "missing-final-newline",
-    "consider-using-f-string",
-    "bare-except",
-    "missing-module-docstring",
-    "invalid-name"
-    ]

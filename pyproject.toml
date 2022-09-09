@@ -1,0 +1,17 @@
+[tool.pylint.messages_control]
+
+disable = [
+    "missing-final-newline",
+    "consider-using-f-string",
+    "missing-module-docstring",
+    "invalid-name",
+    "unidiomatic-typecheck"
+    ]
+
+[tool.black]
+line-length = 80
+target-version = ['py39']
+skip-string-normalization = true
+
+[tool.isort]
+length_sort = true
