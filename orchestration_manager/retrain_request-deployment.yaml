@@ -1,14 +1,15 @@
 ###
-### A complete description of a Prefect Deployment for flow 'main'
+### A complete description of a Prefect Deployment for flow 'retrain-request'
 ###
-name: training-model
+name: retrain-model
 description: null
-version: 6013e46373432d0047458f417661bd39
+version: f423f9b1e83525192dc453a96ec7cbda
 # The work queue that will handle this deployment's runs
 work_queue_name: project-manager
 tags: []
 parameters: {}
-schedule: null
+schedule: 
+  cron: 5 * * * *
 infra_overrides: {}
 infrastructure:
   type: process
@@ -24,20 +25,14 @@ infrastructure:
 ###
 ### DO NOT EDIT BELOW THIS LINE
 ###
-flow_name: main
+flow_name: retrain-request
 manifest_path: null
 storage: null
 path: /home/kkr/notebooks/project/orchestration_manager
-entrypoint: prefect_model.py:main
+entrypoint: prefect_model.py:retrain_request
 parameter_openapi_schema:
   title: Parameters
   type: object
-  properties:
-    current_date:
-      title: current_date
-      default: 2015-7-21
-    periods:
-      title: periods
-      default: 5
+  properties: {}
   required: null
   definitions: null

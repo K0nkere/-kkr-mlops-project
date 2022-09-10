@@ -24,7 +24,7 @@ check ports for tunneling in VSCode is open
 5001 for MLFlow
 4200 for Prefect Orion
 3000 for grafana
-
+check for venv variables is setted after running run-venv.sh
 
 Error on
 {

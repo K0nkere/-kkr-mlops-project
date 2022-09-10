@@ -1,4 +1,5 @@
 import os
+import sys
 import requests
 import numpy as np
 import pandas as pd
@@ -9,8 +10,8 @@ from time import sleep
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-import prefect
-from prefect import task, flow
+# import prefect
+# from prefect import task, flow
 
 BUCKET = os.getenv("BUCKET", 'kkr-mlops-zoomcamp')
 url = "http://127.0.0.1:9696/prediction"
@@ -39,7 +40,7 @@ def read_file(key, bucket=BUCKET):
     return data
 
 
-@task
+# @task
 def load_data(current_date = "2015-6-17", periods = 1):
     
     dt_current = datetime.strptime(current_date, "%Y-%m-%d")
@@ -75,7 +76,7 @@ def load_data(current_date = "2015-6-17", periods = 1):
         return train_data
 
 
-@task
+# @task
 def na_filter(data):
     work_data = data.copy()
     non_type = work_data[data['make'].isna() | data['model'].isna() | data['trim'].isna()].index
@@ -86,8 +87,8 @@ def na_filter(data):
     return work_data, y
 
 
-@flow
-def sending_stream(current_date, periods):
+# @flow
+def sending_stream(current_date, periods, num_records):
 
     test_data, selling_price = na_filter(load_data(current_date, periods))
     test_data.index = range(len(test_data))
@@ -115,12 +116,16 @@ def sending_stream(current_date, periods):
             print(f"Record #{index}", json.dumps(record))
             f_in.write(f"Record #{index} {record['id']}, {selling_price.iloc[index]}, {record['price_estimation']}\n")       
             sleep(0.1)
-            if index >=200:
+            if index >=num_records:
                 break
 
     f_in.close()
 
-    signal = {"current_date": current_date, "finished": True}
+    signal = {
+        "service": "sending_stream",
+        "finished": True,
+        "current_date": current_date
+        }
     
     try:
         response = requests.post(
@@ -133,5 +138,8 @@ def sending_stream(current_date, periods):
     except:
         print("... Cant connect to manager service. Was it run? ...")
 
-sending_stream(current_date = "2015-06-5", periods=0)
 
+if __name__ == "__main__":
+    current_date = sys.argv[1]
+    num_records = int(sys.argv[2])
+    sending_stream(current_date=current_date, periods=0, num_records=num_records)

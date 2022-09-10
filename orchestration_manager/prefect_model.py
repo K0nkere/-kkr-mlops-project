@@ -1,49 +1,36 @@
-import os
 import json
-import boto3
-# import pickle
-# import pyarrow
+import os
+from datetime import datetime
+import requests
 
+import boto3
+import mlflow
 import numpy as np
 import pandas as pd
-
-from datetime import datetime
 from dateutil.relativedelta import relativedelta
-
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
-from sklearn.pipeline import Pipeline
-
-from sklearn.feature_extraction import DictVectorizer
-
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
-
-from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.ensemble import RandomForestRegressor
-
-from xgboost import XGBRegressor
-
-import mlflow
-from mlflow.tracking import MlflowClient
-from mlflow.entities import ViewType
-
-from hyperopt import STATUS_OK, Trials, fmin, hp, tpe, space_eval
+from hyperopt import STATUS_OK, Trials, fmin, hp, space_eval, tpe
 from hyperopt.pyll import scope
-
-from prefect import task, flow
+from mlflow.entities import ViewType
+from mlflow.tracking import MlflowClient
+from prefect import flow, task
 from prefect.task_runners import SequentialTaskRunner
-
-from prefect.deployments import Deployment   
-from prefect.orion.schemas.schedules import IntervalSchedule, CronSchedule
-# from prefect.flow_runners import SubprocessFlowRunner
-
-# MLFLOW_TRACKING_URI = 'sqlite:///../mlops-project.db'
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.feature_extraction import DictVectorizer
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.metrics import (mean_absolute_error,
+                             mean_absolute_percentage_error,
+                             mean_squared_error)
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from xgboost import XGBRegressor
 
 BUCKET = os.getenv("BUCKET", 'kkr-mlops-zoomcamp')
 PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP", "51.250.101.100")
-# MLFLOW_TRACKING_URI = "http://127.0.0.1:5001/"
+
 MLFLOW_TRACKING_URI = f"http://{PUBLIC_SERVER_IP}:5001/"
+signal_url = "http://127.0.0.1:9898/manager"
 
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
@@ -76,9 +63,9 @@ def read_file(key, bucket=BUCKET):
 
 @task
 def load_data(current_date = "2015-5-17", periods = 1):
-    
+
     dt_current = datetime.strptime(current_date, "%Y-%m-%d")
-    
+
     if periods == 1:
         date_file = dt_current + relativedelta(months = - 1)
         print(f"... Getting TEST data for {date_file.year}-{date_file.month} period ...")
@@ -97,9 +84,9 @@ def load_data(current_date = "2015-5-17", periods = 1):
                 print(f"... Cannot find file car-prices-{date_file.year}-{date_file.month}.csv ...",
                     "using blank")
                 data = None
-                
+
             train_data = pd.concat([train_data, data])
-        
+
         return train_data
 
 
@@ -118,7 +105,7 @@ class FeaturesModifier:
     def __init__(self, columns):
         self.columns = columns
 
-    def fit(self, work_data, _ = None):
+    def fit(self, _ = None):
         return self
 
     def transform(self, work_data, _ = None):
@@ -126,7 +113,7 @@ class FeaturesModifier:
         work_data = pd.DataFrame(work_data, columns = self.columns)
         work_data['make_model_trim'] = work_data['make'] + '_'  + work_data['model'] + '_' + work_data['trim']
         work_data['year'] = work_data['year'].astype('str')
-        
+
         cat_cols = ['year', 'make_model_trim', 'body', 'transmission', 'color', 'interior']
         num_cols = ['condition', 'odometer', 'mmr']
 
@@ -146,7 +133,7 @@ def prepare_features(work_data, preprocessor = None):
     cat_2_impute = ['body', 'transmission']
     constant_2_impute = ['color', 'interior']
     others = ['year', 'make', 'model', 'trim']
-    
+
     if not preprocessor:
         features_filler = ColumnTransformer([
             ('num_imputer', SimpleImputer(missing_values=np.nan, strategy='mean'), num_2_impute),
@@ -158,14 +145,14 @@ def prepare_features(work_data, preprocessor = None):
 
         fm = FeaturesModifier(columns = num_2_impute + cat_2_impute + constant_2_impute + others)
 
-        dv = DictVectorizer() 
+        dv = DictVectorizer()
 
         preprocessor = Pipeline(steps = [
             ('filler', features_filler),
             ('modifier', fm),
             ('dict_vectorizer', dv)
         ])
-        
+
         X = preprocessor.fit_transform(work_data)
 
     else:
@@ -180,7 +167,7 @@ def params_search(train, valid, y_train, y_valid, train_dataset_period, models):
     best_models = []
 
     for baseline in models:
-        
+
         mlflow.set_experiment(f"{baseline.__name__}-models")
         search_space = models[baseline]
 
@@ -190,7 +177,7 @@ def params_search(train, valid, y_train, y_valid, train_dataset_period, models):
                 mlflow.set_tag("baseline", f"{baseline.__name__}")
                 mlflow.log_param("train_dataset", train_dataset_period)
                 mlflow.log_param("parameters", params)
-                
+
                 print('... Serching for the best parameters ... ')
 
                 training_model = baseline(**params)
@@ -208,19 +195,19 @@ def params_search(train, valid, y_train, y_valid, train_dataset_period, models):
                 mlflow.log_metric('mape_valid', mape_valid)
 
             return {'loss': mape_valid, 'status': STATUS_OK}
-        
+
         best_result = fmin(fn = objective,
                     space = search_space,
                     algo = tpe.suggest,
                     max_evals = 20, # int(2**(len(models[baseline].items())-2)), #3,
                     trials = Trials(),
-                    ) 
-        
+                    )
+
         print("... Best model ...\n", baseline(**space_eval(search_space, best_result)))
         best_models.append(baseline(**space_eval(search_space, best_result)))
 
         mlflow.end_run()
-    
+
     return best_models
 
 
@@ -234,7 +221,7 @@ def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, 
 
     mlflow.autolog()
     for model in models:
-    
+
         experiment = mlflow.set_experiment(f"{model.__name__}-models")
 
         best_run = mlflow_client.search_runs(
@@ -244,18 +231,18 @@ def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, 
                 filter_string=query,
                 order_by = ['metrics.mape_valid ASC']
             )
-        
+
         print(f"... Training {model.__name__} with best params ...")
 
         mlflow.set_experiment(best_models_experiment) #"Auction-car-prices-best-models")
-    
+
         with mlflow.start_run():
-            
+
             mlflow.log_param("test_dataset", test_dataset_period)
 
             best_params = json.loads(best_run[0].data.params['parameters'].replace("'", "\""))
             staged_model = model(**best_params).fit(train, y_train)
-            
+
             pipeline = Pipeline(
                 steps = [
                     ('preprocessor', preprocessor),
@@ -275,7 +262,7 @@ def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, 
             mlflow.log_metric('mae_test', mae_test)
             mlflow.log_metric('mape_test', mape_test)
             mlflow.sklearn.log_model(pipeline, artifact_path='full-pipeline')
-            
+
             best_pipelines.append((model.__name__, pipeline))
 
             print("... {:} MODEL was saved as a RUN of {:} ...".format(model.__name__, best_models_experiment))
@@ -287,7 +274,7 @@ def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, 
 
 @task
 def model_to_registry(best_models_experiment, model_name, test_dataset_period):
-    
+
     experiment = mlflow.set_experiment(best_models_experiment) #'Auction-car-prices-best-models')
 
     query = f'parameters.test_dataset = "{test_dataset_period}"'
@@ -297,18 +284,18 @@ def model_to_registry(best_models_experiment, model_name, test_dataset_period):
         filter_string=query,
         max_results=1,
         order_by=["metrics.mape_test ASC"]
-            
+
         )
     RUN_ID = best_model_run[0].info.run_id
     model_uri = "runs:/{:}/full-pipeline".format(RUN_ID)
-   
+
     print(f"... Registering model {model_name} ...")
     registered_model = mlflow.register_model(
             model_uri=model_uri,
             name = model_name
         )
     print(f"... Model RUN_ID {registered_model.run_id} was registered as version {registered_model.version} at {registered_model.current_stage} stage ...")
-    
+
     return registered_model
 
 
@@ -344,14 +331,14 @@ def load_model(model_name, stage=None, version=None, run_id=None):
         model = mlflow.pyfunc.load_model(model_uri = model_uri)
 
         return model, versions[0].version
-    except:
+    except ValueError("... Cant reach the model ..."):
         print(f"... There are no models at {stage} stage ...")
-        
+
         return None, None
 
 
 @task
-def switch_model_of_production(X_test, y_test, model_name): #, current_date):
+def switch_model_of_production(X_test, y_test, model_name):
 
     staging_model, staging_version = load_model(model_name, stage = "Staging")
     if staging_model:
@@ -376,15 +363,15 @@ def switch_model_of_production(X_test, y_test, model_name): #, current_date):
         print(f"... Need to switch models. Version {staging_version} is better than {production_version} ...")
 
         return staging_version
-        
+
     else:
         print(f"... No need to switch models. Version {production_version} is the best ...")
         return None
 
 
 @flow(task_runner = SequentialTaskRunner())
-def main(current_date = "2015-7-21", periods = 5):
-    
+def main(current_date = "2015-5-21", periods = 5):
+
     best_models_experiment = "Auction-car-prices-best-models"
     model_name = "Auction-car-prices-prediction"
 
@@ -466,13 +453,33 @@ def main(current_date = "2015-7-21", periods = 5):
             registered_model_version = switch_to_version,
             to_stage="Production"
             )
-        
+
     else:
         print("... Current model is OK ...")
 
-# main()
-# Deployment(flow = main,
-#                 name = 'MLOps-project-auction-car-prices',
-#                 schedule = IntervalSchedule(interval = timedelta(minutes=5)), 
-#                 flow_runner = SubprocessFlowRunner(),
-#                 tags = ['ml-cpu'])
+@flow
+def retrain_request():
+
+    print("... Sending a check for model retraining ...")
+    check = {
+        "service": "training_model"
+    }
+
+    response = requests.post(
+                    url=signal_url,
+                    json=check,
+                    timeout=60
+                )
+
+    response = response.json()
+
+    current_date = response["current_date"]
+
+    if response["current_date"]:
+        current_date = response["current_date"]
+
+        print(f"... Retraining model with data up to {current_date}")
+        main(current_date=current_date)
+    else:
+        print("... No request to retrain model ...")
+

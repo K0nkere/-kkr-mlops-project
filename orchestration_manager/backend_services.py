@@ -1,12 +1,11 @@
 import os
-import pandas as pd
-import boto3
-
-import mlflow
-from mlflow.tracking import MlflowClient
-
 from datetime import datetime
+
+import boto3
+import mlflow
+import pandas as pd
 from dateutil.relativedelta import relativedelta
+from mlflow.tracking import MlflowClient
 
 PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP")
 # PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP")
@@ -36,23 +35,23 @@ def read_file(key, bucket=BUCKET):
 
 
 def load_data(current_date = "2015-6-17", periods = 1):
-    
+
     dt_current = datetime.strptime(current_date, "%Y-%m-%d")
-    
+
     if periods == 1:
         date_file = dt_current + relativedelta(months = - 1)
         print(f"Getting TEST data for {date_file.year}-{date_file.month} period")
         test_data = read_file(key = f"datasets/car-prices-{date_file.year}-{date_file.month}.csv")
 
         return test_data
-    
+
     elif periods == 0:
         date_file = dt_current
         print(f"Getting TEST data for {date_file.year}-{date_file.month} period")
         current_data = read_file(key = f"datasets/car-prices-{date_file.year}-{date_file.month}.csv")
 
         return current_data
-        
+
     else:
         train_data = pd.DataFrame()
         for i in range(periods+1, 1, -1):
@@ -64,9 +63,9 @@ def load_data(current_date = "2015-6-17", periods = 1):
                 print(f"Cannot find file car-prices-{date_file.year}-{date_file.month}.csv",
                     "using blank")
                 data = None
-                
+
             train_data = pd.concat([train_data, data])
-        
+
         return train_data
 
 
@@ -88,7 +87,7 @@ def load_model():
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
     if PUBLIC_SERVER_IP:
-        
+
         model_uri = f"models:/{model_name}/production"
 
         print("... Loading prediction model from production stage ...")
@@ -99,14 +98,14 @@ def load_model():
                 name =  model_name,
                 stages = ["Production"]
             )
-        
+
         version = versions[0].version
         run_id = versions[0].run_id
         print(f"Version: {version} Run_id: {run_id}")
 
     else:
         pass
-            
+
     return model
 
 

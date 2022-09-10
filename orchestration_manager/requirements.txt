@@ -1,5 +1,6 @@
 pyarrow
-pickle-mixin
+# pickle-mixin
+cloudpickle==2.1.0
 boto3==1.24.50
 
 pandas==1.1.5
