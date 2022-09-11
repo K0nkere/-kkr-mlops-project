@@ -68,14 +68,11 @@ You will need a VM (I used Yandex Cloud for that) with :
 - install pipenv
 - install docker & docker-compose
  
-1) Got to your _/home/your-user_ folder and clone the repo from git
+### [deployment instructions](https://github.com/K0nkere/kkr-mlops-project/issues/9#issue-1369072636)
 
-```git clone https://github.com/K0nkere/kkr-mlops-project.git```
+### Fast Run
 
-It will create _kkr-mlops-project_ folder that contains my code - in the following i will call it _project folder_
-
-2) From the _project folder_ go to orchestration_manager folder and add in the _.env_ file you 
-your specific parameters
+Edit the orchestration_manager/.env and place your values
 ```
 PUBLIC_SERVER_IP=<your_public_ip>                               #insert
 MLFLOW_S3_ENDPOINT_URL=<endpoint_irl>                           #like https://storage.yandexcloud.net
@@ -85,119 +82,34 @@ AWS_SECRET_ACCESS_KEY=<your_secret_key>                         #insert yours
 BACKEND_URI=sqlite:////mlflow/database/mlops-project.db         #leave it as it is
 ARTIFACT_ROOT=s3://<your_bucket_name>/mlflow-artifacts/         #insert your bucket_name
 ```
-
-!!! MLFLOW_S3_ENDPOINT_URL is needed for analogs of AWS s3 bucket so if your are using original AWS looks like you can delete this row
-And if so - you need to go to _project folder_ and correct _docker-compose.yml_ - comment rows with MLFLOW_S3_ENDPOINT_URL in environment blocks for all services
-In the case of original AWS should be like this
-```# MLFLOW_S3_ENDPOINT_URL: "${MLFLOW_S3_ENDPOINT_URL}"```
-
-Finally run from _project folder_ under your default base environment
-```
+Open Terminal 1
+`
 bash run-venv.sh
-```
-
-it will create virtual environments for project services
-
-3) Open new terminal and from the _project folder_ under the base env, run
-```
+`
+`
+cd ..
+`
+`
 bash run-tests.sh
-```
-
-it will launch unit and integration tests
-
-4) Check that ports for docker-compose is empty
-    ```docker ps```
-    if needed `docker kill container_id`
-Service is using
-```
-5001 for MLFlow
-4200 for Prefect Orion
-3000 for grafana
-9696 for prediction service
-9898 for manager service
-You can use terminal from stage 3
-```
-
-5) Use terminal from stage 2 with orchestrarion_manager venv. Return to _project folder_ and run
-```
+`
+`
 bash run-services.sh
-```
-it will install and launch all services in docker-compose and will start Prefect Orion server
+`
 
-6) Open new terminal and run under the base env from _project folder_
-```
-bash run-manaher.sh
-```
-it will create prefect deployments and prefect queue and will launch prefect agent
+Terminal 2
+From project folder
+`
+bash run-manager.sh
+`
 
-7) Open new terminal, from _project folder_ go to orchestration_manager folder and run
-```
+Terminal 3
+from project/orchestration_manager
+`
 pipenv shell
-```
-to activate venv
-return to _project folder_
-
-All services are started and ready to work!
-
-8) Its need to train starting model - better to do it from Prefect UI.
-Open 127.0.0.1:your-tunneled-port in browser (something like 127.0.0.1:4200 or 4201) - Prefect UI
-
-From Deployments > retrain_request press retrain-model > and RUN it with button on the right corner
-(https://user-images.githubusercontent.com/101024338/189548276-6675b276-7e3b-4128-8578-1553a7459a77.JPG)
-
-Trainig process you can see on the log of Prefect Agent terminal
-
-When the first model will be created it will automaticly will be promoted to Production stage and 
-you can **imitate** of sending data to prediction service
-
-9) From terminal from _project folder_ under the orchestration env
-(`cd orchestration_manager > pipenv shell > cd ..`)
-
-run python send_data.py with parameters of data in format _yyyy-mm-dd_ and number of recors
-
-(dataset for every month consist of a few thousand so better to use just a few dozens), like
-```
-python send_data.py 2015-5-30 200
-```
-
-When all rows will be sended and logged in _project/targets folder_ month report can be created. Dont need to wait till the end of month - lets manually RUN from Prefect UI
-```
-Deployments > batch_analyze press monitoring report > RUN
-```
-
-You can watch the result of report in the logs of Prefect Agent terminal
-Report will be created and saved in _project/reports folder_ you can download it by pressing left-click in VSCode 
-(I dont save it in the bucket:( )
-
-When report is created and the model drift is taking place it is possible to run a retrain (manually for review)
-
-By default on the end of month prefect agent will start deployment for creating report on the data for the latest month. 
-It save evidently report to _project/reports folder_ and will estimate is the a model drift of not. After that retrain service will give a questiong to manager service is it need to retrain a model on the latest data and if the was a drift manager will return True.
-
-10) You can play with the manager service and run data from different month from 2015-1 to 2015-7.
-The logic of manager service is the following:
-```
-report creation and retrain can be lauched at start freely
-```
-```
-new data was sended > report can be created
-```
-else waiting for new data
-```
-report created and drift detected > possible to retrain
-```
-else waiting for new report
-
-If report is created, manager will not allow to create another one on the same data - need to load new data
-
-(just run report creation manually via Prefect UI twice one by one and watch logs)
-
-If model was retrained, manager will not allow to retrain again - need to send a new data and create a new report
-
-(just run retrain-model manually via Prefect UI twice one by one and watch logs)
-
-
-
-
-
-check for venv variables is setted after running run-venv.sh
+`
+`
+cd ..
+`
+`
+python send-data.py 2015-5-30 100
+`
