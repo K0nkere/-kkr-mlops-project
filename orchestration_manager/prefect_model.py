@@ -27,7 +27,7 @@ from sklearn.pipeline import Pipeline
 from xgboost import XGBRegressor
 
 BUCKET = os.getenv("BUCKET", 'kkr-mlops-zoomcamp')
-PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP", "51.250.101.100")
+PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP","127.0.0.1")
 
 MLFLOW_TRACKING_URI = f"http://{PUBLIC_SERVER_IP}:5001/"
 signal_url = "http://127.0.0.1:9898/manager"
@@ -35,7 +35,11 @@ signal_url = "http://127.0.0.1:9898/manager"
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
 
+def return_pre_parent():
+    path_to_script = os.path.split(__file__)[0]
+    pre_parent = os.path.split(path_to_script)[0]
 
+    return pre_parent
 
 def read_file(key, bucket=BUCKET):
     """
@@ -56,7 +60,8 @@ def read_file(key, bucket=BUCKET):
 
     except:
         print(f"... Failed to connect to {BUCKET} bucket, getting data from local storage ...")
-        data = pd.read_csv(f"../{key}", sep=",", na_values='NaN')
+        file_path = return_pre_parent()
+        data = pd.read_csv(f"{file_path}/{key}", sep=",", na_values='NaN')
 
     return data
 

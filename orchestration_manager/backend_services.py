@@ -11,6 +11,11 @@ PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP")
 # PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP")
 BUCKET = os.getenv("BUCKET", 'kkr-mlops-zoomcamp')
 
+def return_pre_parent():
+    path_to_script = os.path.split(__file__)[0]
+    pre_parent = os.path.split(path_to_script)[0]
+
+    return pre_parent
 
 def read_file(key, bucket=BUCKET):
     try:
@@ -29,7 +34,8 @@ def read_file(key, bucket=BUCKET):
 
     except:
         print(f"... Failed to connect to {BUCKET} bucket, getting data from local storage ...")
-        data = pd.read_csv(f"../{key}", sep=",", na_values='NaN')
+        file_path = return_pre_parent()
+        data = pd.read_csv(f"{file_path}/{key}", sep=",", na_values='NaN')
 
     return data
 
