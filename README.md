@@ -156,10 +156,15 @@ you can **imitate** of sending data to prediction service
 run python send_data.py with parameters of data in format _yyyy-mm-dd_ and number of recors
 
 (dataset for every month consist of a few thousand so better to use just a few dozens), like
-```python send_data.py 2015-5-30 200```
+```
+python send_data.py 2015-5-30 200
+```
 
 When all rows will be sended and logged in _project/targets folder_ month report can be created. Dont need to wait till the end of month - lets manually RUN from Prefect UI
-Deployments > batch_analyze press monitoring report > RUN 
+```
+Deployments > batch_analyze press monitoring report > RUN
+```
+
 You can watch the result of report in the logs of Prefect Agent terminal
 Report will be created and saved in _project/reports folder_ you can download it by pressing left-click in VSCode 
 (I dont save it in the bucket:( )
@@ -171,13 +176,24 @@ It save evidently report to _project/reports folder_ and will estimate is the a 
 
 10) You can play with the manager service and run data from different month from 2015-1 to 2015-7.
 The logic of manager service is the following:
-```report creation and retrain can be lauched at start freely```
-```new data was sended > report can be created``` else waiting for new data
-```report created and drift detected > possible to retrain``` else waiting for new report
+```
+report creation and retrain can be lauched at start freely
+```
+```
+new data was sended > report can be created
+```
+else waiting for new data
+```
+report created and drift detected > possible to retrain
+```
+else waiting for new report
 
 If report is created, manager will not allow to create another one on the same data - need to load new data
+
 (just run report creation manually via Prefect UI twice one by one and watch logs)
+
 If model was retrained, manager will not allow to retrain again - need to send a new data and create a new report
+
 (just run retrain-model manually via Prefect UI twice one by one and watch logs)
 
 
