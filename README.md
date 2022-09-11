@@ -83,34 +83,14 @@ AWS_SECRET_ACCESS_KEY=<your_secret_key>                         #insert yours
 BACKEND_URI=sqlite:////mlflow/database/mlops-project.db         #leave it as it is
 ARTIFACT_ROOT=s3://<your_bucket_name>/mlflow-artifacts/         #insert your bucket_name
 ```
-Open Terminal 1
-`
-bash run-venv.sh
-`
-`
-cd ..
-`
-`
-bash run-tests.sh
-`
-`
-bash run-services.sh
-`
+Open
+ Terminal 1
+`bash run-venv.sh` `cd ..` `bash run-tests.sh` `bash run-services.sh`
 
 Terminal 2
 From project folder
-`
-bash run-manager.sh
-`
+`bash run-manager.sh` 
 
 Terminal 3
 from project/orchestration_manager
-`
-pipenv shell
-`
-`
-cd ..
-`
-`
-python send-data.py 2015-5-30 100
-`
+`pipenv shell` `cd ..` `python send-data.py 2015-5-30 100`
