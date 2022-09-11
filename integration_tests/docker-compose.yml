@@ -1,0 +1,14 @@
+services:
+  prediction_service:
+    image: ${PREDICTION_SERVICE_TEST}:test
+    volumes:
+      - "../3-deployment/model:/app/model"
+    ports:
+      - "9696:9696"
+
+  s3:
+    image: localstack/localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES='s3'

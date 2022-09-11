@@ -26,6 +26,8 @@ services:
       AWS_SECRET_ACCESS_KEY: "YCPbwZrpsvkpG4LnrVQwRCVIahXsRHAXq_o_FbIA"
       # PUBLIC_SERVER_IP: "51.250.101.100"
       PUBLIC_SERVER_IP: "${PUBLIC_SERVER_IP}"
+    volumes:
+      - "./3-deployment/model:/app/model"
     ports:
       - "9696:9696"
     networks:

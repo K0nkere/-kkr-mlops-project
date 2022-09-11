@@ -1,12 +1,14 @@
 import os
 import json
 import pandas as pd
+import pickle
 
 import mlflow
 
 from flask import Flask, request, jsonify
 
-PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP")
+PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP", False)
+
 print(f"... Connecting to MLFlow Server on {PUBLIC_SERVER_IP} ...")
 
 # MLFLOW_TRACKING_URI = 'sqlite:///../mlops-project.db'
@@ -18,9 +20,15 @@ mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 model_name = "Auction-car-prices-prediction"
 model_uri = f"models:/{model_name}/production"
 
-print("... Loading prediction model from production stage ...")
+if PUBLIC_SERVER_IP:
+    print("... Loading prediction model from production stage ...")
+    model = mlflow.pyfunc.load_model(model_uri=model_uri)
 
-model = mlflow.pyfunc.load_model(model_uri=model_uri)
+else:
+    print("... Loading pre-saved model ...")
+
+    with open("model/model.pkl", "rb") as f_in:
+        model = pickle.load(f_in)
 
 def prediction(record):
     record_df = pd.DataFrame([record])

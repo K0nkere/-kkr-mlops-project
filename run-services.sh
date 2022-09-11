@@ -2,7 +2,9 @@
 
 docker-compose up --build -d
 
-prefect config set PREFECT_ORION_UI_API_URL="http://${PUBLIC_SERVER_IP}:4200/api"
-prefect config set PREFECT_API_URL="http://${PUBLIC_SERVER_IP}:4200/api"
+cd orchestration_manager
 
-prefect orion start --host 0.0.0.0
+pipenv run prefect config set PREFECT_ORION_UI_API_URL="http://${PUBLIC_SERVER_IP}:4200/api"
+pipenv run prefect config set PREFECT_API_URL="http://${PUBLIC_SERVER_IP}:4200/api"
+
+pipenv run prefect orion start --host 0.0.0.0
