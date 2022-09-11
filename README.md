@@ -58,7 +58,7 @@ There are few unit tests and integration test of deployment of prediction servic
 I had beed using pylint, isort and black to make the code more estetical.
 
 ### Deployment for reviewing
-You will be need a VM (I used Yandex Cloud for that) with :
+You will need a VM (I used Yandex Cloud for that) with :
 - Ubuntu server
 - public IP address of the server
 - bucket storage (s3 or analog)
@@ -69,7 +69,9 @@ You will be need a VM (I used Yandex Cloud for that) with :
 - install docker & docker-compose
  
 1) Got to your _/home/your-user_ folder and clone the repo from git
+
 ```git clone https://github.com/K0nkere/kkr-mlops-project.git```
+
 It will create _kkr-mlops-project_ folder that contains my code - in the following i will call it _project folder_
 
 2) From the _project folder_ go to orchestration_manager folder and add in the _.env_ file you 
@@ -89,33 +91,50 @@ And if so - you need to go to _project folder_ and correct _docker-compose.yml_ 
 In the case of original AWS should be like this
 ```# MLFLOW_S3_ENDPOINT_URL: "${MLFLOW_S3_ENDPOINT_URL}"```
 
- Finally run from _project folder_ under your default base environment
-```bash run-venv.sh``` - it will create virtual environments for project services
+Finally run from _project folder_ under your default base environment
+```
+bash run-venv.sh
+```
+
+it will create virtual environments for project services
 
 3) Open new terminal and from the _project folder_ under the base env, run
-```bash run-tests.sh``` - it will launch unit and integration tests
+```
+bash run-tests.sh
+```
+
+it will launch unit and integration tests
 
 4) Check that ports for docker-compose is empty
     ```docker ps```
     if needed `docker kill container_id`
-Service is using   
+Service is using
+```
 5001 for MLFlow
 4200 for Prefect Orion
 3000 for grafana
 9696 for prediction service
 9898 for manager service
 You can use terminal from stage 3
+```
 
 5) Use terminal from stage 2 with orchestrarion_manager venv. Return to _project folder_ and run
-```bash run-services.sh```
+```
+bash run-services.sh
+```
 it will install and launch all services in docker-compose and will start Prefect Orion server
 
 6) Open new terminal and run under the base env from _project folder_
-``` bash run-manaher.sh```
+```
+bash run-manaher.sh
+```
 it will create prefect deployments and prefect queue and will launch prefect agent
 
 7) Open new terminal, from _project folder_ go to orchestration_manager folder and run
-```pipenv shell``` to activate venv
+```
+pipenv shell
+```
+to activate venv
 return to _project folder_
 
 All services are started and ready to work!
@@ -131,8 +150,12 @@ Trainig process you can see on the log of Prefect Agent terminal
 When the first model will be created it will automaticly will be promoted to Production stage and 
 you can **imitate** of sending data to prediction service
 
-9) From terminal from _project folder_ under the orchestration env (`cd orchestration_manager > pipenv shell > cd ..`)
-run python send_data.py with parameters of data in format _yyyy-mm-dd_ and number of recors (dataset for every month consist of a few thousand so better to use just a few dozens), like
+9) From terminal from _project folder_ under the orchestration env
+(`cd orchestration_manager > pipenv shell > cd ..`)
+
+run python send_data.py with parameters of data in format _yyyy-mm-dd_ and number of recors
+
+(dataset for every month consist of a few thousand so better to use just a few dozens), like
 ```python send_data.py 2015-5-30 200```
 
 When all rows will be sended and logged in _project/targets folder_ month report can be created. Dont need to wait till the end of month - lets manually RUN from Prefect UI
