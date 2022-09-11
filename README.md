@@ -1,4 +1,4 @@
-Hello! This is a MLOps project based on the Kaggle Used Car Auction Prices dataset. The goal is to master the full lifetime cycle of ML model development. Project is fully created on the Yandex Cloud and covers:
+Hello! This is a MLOps project based on the [Kaggle Used Car Auction Prices dataset](https://www.kaggle.com/datasets/tunguz/used-car-auction-prices). The goal is to master the full lifetime cycle of ML model development. Project is fully created on the Yandex Cloud and covers:
 
 - creation of a model (python, sklearn, xgboost)
 - its tracking while training and validating (Yandex Cloud, s3-bucket, MLflow)
@@ -32,7 +32,7 @@ Unfortunetly training of Random Forest and XGBoost regressions usually take abou
 - model will be train for all models and select the best one of them on the certain period
 )
 
-Stage-2 Searching the best parameters with MLFlow tracking service
+### Stage-2 Searching the best parameters with MLFlow tracking service
 I had been using MLFlow to tracking of training process.
 I used Hyperopt library in order to train each of the models. So it is returns the set of parameters that gives me the best model prediction on the train+valid part.
 I had been training each model on a hyperopt grid for 20 times and takes the best ones on valid dataset.
@@ -43,23 +43,59 @@ After that, the best models are combined with preprocessor into a pipeline so i 
 
 Also MLFlow helped me to create mechanism of switching of between models if newly trained model will be better than current production model.
 
-Stage-3 Initial orchestrating with Prefect
+### Stage-3 Initial orchestrating with Prefect
 I covered previously constructed model with into @flows and @tasks in order to Prefect Orion agent will be able automaticly launch retrain process on the end of each month after getting report from Evidently service and if model drift will be located.
 
 Stage-4 Deployment final model with Flask as a web-service 
 I took an advantage of Flask to create web service that get production model with help of MLFlow service and use it to predict price by request.
 
-Stage-5 Monitoring 
+### Stage-5 Monitoring
 Evidently service helps me to create online monitoring of prediction service.
-And on the end of each month Prefect launched creation of statistical report based on received data. So the prediction service can check is there a drift of a production model. If so manager-service will invoke retrain process with the latest data.
+On the end of each month Prefect launched creation of statistical report based on received data. So the prediction service can check is there a drift of production model. If so manager-service will invoke retrain process with the latest data.
 
-Stage-6 Tests
+### Stage-6 Tests
 There are few unit tests and integration test of deployment of prediction service.
 I had beed using pylint, isort and black to make the code more estetical.
 
-Deployment
-insert correct values into .env
-check ports for docker-compose is empty
+### Deployment for reviewing
+You will be need a VM (I used Yandex Cloud for that) with :
+- Ubuntu server
+- public IP address of the server
+- bucket storage (s3 or analog)
+- AWS credentials for access to bucket
+- cloud endpoint url to access to bucket
+- install pip
+- install pipenv
+- install docker & docker-compose
+ 
+1) Got to your _/home/<user>_ folder and clone the repo from git
+`git clone https://github.com/K0nkere/kkr-mlops-project.git`
+It will create _kkr-mlops-project_ folder that contains my code - in the following i will call it _project folder_
+
+2) From the _project folder_ go to orchestration_manager folder and add in the _.env_ file you 
+insert your parameters values into .env
+```
+PUBLIC_SERVER_IP=<your_public_ip>           #insert
+MLFLOW_S3_ENDPOINT_URL=<endpoint_irl>       #like https://storage.yandexcloud.net
+AWS_DEFAULT_REGION=<defult_region>          #like ru-central1
+AWS_ACCESS_KEY_ID=<your_key_id>             #insert yours
+AWS_SECRET_ACCESS_KEY=<your_secret_key>     #insert yours
+BACKEND_URI=sqlite:////mlflow/database/mlops-project.db         #leave it as it is
+ARTIFACT_ROOT=s3://<your_bucket_name>/mlflow-artifacts/         #insert your bucket_name
+```
+
+!!! MLFLOW_S3_ENDPOINT_URL is needed for analogs of AWS s3 bucket so if your are using original AWS looks like you can delete this row
+And if so - you need to go to _project folder_ and correct _docker-compose.yml_ - remove rows with MLFLOW_S3_ENDPOINT_URL in environment blocks for all services
+
+ Finally run from _project folder_ under your default base environment
+`bash run-venv.sh` - it will create virtual environments for project services
+
+3) Open new terminal and from the _project folder_ under the base env, run
+`bash run-tests.sh` - it will launch unit and integration tests
+
+3) Use terminal from step 2 with orchestration_manager venv
+
+3) Check ports for docker-compose is empty
     docker ps
         docker kill <container_id>
 check ports for tunneling in VSCode is open
