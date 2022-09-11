@@ -331,7 +331,7 @@ def load_model(model_name, stage=None, version=None, run_id=None):
         model = mlflow.pyfunc.load_model(model_uri = model_uri)
 
         return model, versions[0].version
-    except ValueError("... Cant reach the model ..."):
+    except:
         print(f"... There are no models at {stage} stage ...")
 
         return None, None

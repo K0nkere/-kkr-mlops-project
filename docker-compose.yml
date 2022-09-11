@@ -20,11 +20,10 @@ services:
     environment:
       EVIDENTLY_SERVICE: "http://evidently_service.:8085"
       MONGODB_ADDRESS: "mongodb://mongo.:27017/"
-      MLFLOW_S3_ENDPOINT_URL: "https://storage.yandexcloud.net"
-      AWS_DEFAULT_REGION: "ru-central1"
-      AWS_ACCESS_KEY_ID: "YCAJEwNTUy1TB_cku57IXUNjt"
-      AWS_SECRET_ACCESS_KEY: "YCPbwZrpsvkpG4LnrVQwRCVIahXsRHAXq_o_FbIA"
-      # PUBLIC_SERVER_IP: "51.250.101.100"
+      MLFLOW_S3_ENDPOINT_URL: "${MLFLOW_S3_ENDPOINT_URL}"
+      AWS_DEFAULT_REGION: "${AWS_DEFAULT_REGION}"
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
       PUBLIC_SERVER_IP: "${PUBLIC_SERVER_IP}"
     volumes:
       - "./3-deployment/model:/app/model"
@@ -95,14 +94,15 @@ services:
       context: ./1-experiment-tracking
       dockerfile: Dockerfile
     environment:
-      MLFLOW_S3_ENDPOINT_URL: "https://storage.yandexcloud.net"
-      AWS_DEFAULT_REGION: "ru-central1"
-      AWS_ACCESS_KEY_ID: "YCAJEwNTUy1TB_cku57IXUNjt"
-      AWS_SECRET_ACCESS_KEY: "YCPbwZrpsvkpG4LnrVQwRCVIahXsRHAXq_o_FbIA"
-      BACKEND_URI: sqlite:////mlflow/database/mlops-project.db
-      ARTIFACT_ROOT: s3://kkr-mlops-zoomcamp/mlflow-artifacts/
+      MLFLOW_S3_ENDPOINT_URL: "${MLFLOW_S3_ENDPOINT_URL}"
+      AWS_DEFAULT_REGION: "${AWS_DEFAULT_REGION}"
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+      BACKEND_URI: ${BACKEND_URI}
+      ARTIFACT_ROOT: ${ARTIFACT_ROOT}
     volumes:
       - "./mlops-project.db:/mlflow/database/mlops-project.db"
+      - "./mlflow-artifacts:/mlflow/mlflow-artifacts"
     ports:
       - "5001:5001"
     networks:
@@ -114,11 +114,11 @@ services:
       context: ./orchestration_manager
       dockerfile: Dockerfile
     environment:
-      MLFLOW_S3_ENDPOINT_URL: "https://storage.yandexcloud.net"
-      AWS_DEFAULT_REGION: "ru-central1"
-      AWS_ACCESS_KEY_ID: "YCAJEwNTUy1TB_cku57IXUNjt"
-      AWS_SECRET_ACCESS_KEY: "YCPbwZrpsvkpG4LnrVQwRCVIahXsRHAXq_o_FbIA"
-      PUBLIC_SERVER_IP: "${PUBLIC_SERVER_IP}"
+      MLFLOW_S3_ENDPOINT_URL: "${MLFLOW_S3_ENDPOINT_URL}"
+      AWS_DEFAULT_REGION: "${AWS_DEFAULT_REGION}"
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+      PUBLIC_SERVER_IP: "${PUBLIC_SERVER_IP}"     
     # volumes:
     #   - ${pwd}/targets:/manager/targets:ro
     #   - ${pwd}/reports:/manager/reports
