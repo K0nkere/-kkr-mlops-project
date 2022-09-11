@@ -1,9 +1,9 @@
 Hello! This is a MLOps project based on the [Kaggle Used Car Auction Prices dataset](https://www.kaggle.com/datasets/tunguz/used-car-auction-prices). The goal is to master the full lifetime cycle of ML model development. Project is fully created on the Yandex Cloud and covers:
 
-- creation of a model (python, sklearn, xgboost)
-- its tracking while training and validating (Yandex Cloud, s3-bucket, MLflow)
-- orchestrating of retraining model and switching outdated model (Prefect)
-- deployment of the best version as a web-service (docker, Flask) 
+- Creation of a model (python, sklearn, xgboost)
+- Its tracking while training and validating (Yandex Cloud, s3-bucket, MLflow)
+- Orchestrating of retraining model and switching outdated model (Prefect)
+- Deployment of the best version as a web-service (docker, Flask) 
 - Online and batch monitoring in production (Evidently, Prometeus, Graphana)
 - Unit and Integration tests
 - Using best practices with pytest, pylint, black, isort and pre-commit hooks
@@ -46,7 +46,7 @@ Also MLFlow helped me to create mechanism of switching of between models if newl
 ### Stage-3 Initial orchestrating with Prefect
 I covered previously constructed model with into @flows and @tasks in order to Prefect Orion agent will be able automaticly launch retrain process on the end of each month after getting report from Evidently service and if model drift will be located.
 
-Stage-4 Deployment final model with Flask as a web-service 
+### Stage-4 Deployment final model with Flask as a web-service 
 I took an advantage of Flask to create web service that get production model with help of MLFlow service and use it to predict price by request.
 
 ### Stage-5 Monitoring
@@ -73,6 +73,7 @@ You will need a VM (I used Yandex Cloud for that) with :
 ### Fast Run
 
 Clone the repo from github
+
 Edit the orchestration_manager/.env and place your values
 ```
 PUBLIC_SERVER_IP=<your_public_ip>                               #insert
@@ -84,7 +85,8 @@ BACKEND_URI=sqlite:////mlflow/database/mlops-project.db         #leave it as it 
 ARTIFACT_ROOT=s3://<your_bucket_name>/mlflow-artifacts/         #insert your bucket_name
 ```
 Open
- Terminal 1
+
+Terminal 1
 `bash run-venv.sh` `cd ..` `bash run-tests.sh` `bash run-services.sh`
 
 Terminal 2
