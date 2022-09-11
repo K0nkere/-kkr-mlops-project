@@ -68,10 +68,11 @@ You will need a VM (I used Yandex Cloud for that) with :
 - install pipenv
 - install docker & docker-compose
  
-### [deployment instructions](https://github.com/K0nkere/kkr-mlops-project/issues/9#issue-1369072636)
+### [Full deployment instructions](https://github.com/K0nkere/kkr-mlops-project/issues/9#issue-1369072636)
 
 ### Fast Run
 
+Clone the repo from github
 Edit the orchestration_manager/.env and place your values
 ```
 PUBLIC_SERVER_IP=<your_public_ip>                               #insert
