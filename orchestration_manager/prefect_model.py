@@ -324,7 +324,7 @@ def model_promotion(current_date, model_name, registered_model_version, to_stage
     return promoted_model
 
 
-def load_model(model_name, stage=None, version=None, run_id=None):
+def load_model(model_name, stage=None):
 
     versions = mlflow_client.get_latest_versions(
                 name=model_name,

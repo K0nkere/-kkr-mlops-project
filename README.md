@@ -69,6 +69,7 @@ You will need a VM (I used Yandex Cloud for that) with :
 - install docker & docker-compose
  
 ### [Full deployment instructions](https://github.com/K0nkere/kkr-mlops-project/issues/9#issue-1369072636)
+(better to see for detailed walkthrough)
 
 ### Fast Run
 
@@ -96,3 +97,6 @@ From project folder
 Terminal 3
 from project/orchestration_manager
 `pipenv shell` `cd ..` `python send-data.py 2015-5-30 100`
+
+If you have a questions - feel free to ping me in slack mlops-zoomcamp-channel,
+Konstantin Kolmakov

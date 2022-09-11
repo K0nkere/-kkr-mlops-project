@@ -6,7 +6,12 @@ disable = [
     "missing-module-docstring",
     "invalid-name",
     "unidiomatic-typecheck",
-    "redefined-builtin"
+    "redefined-builtin",
+    "unused-variable",
+    "unused-import",
+    "cell-var-from-loop",
+    "bare-except",
+    "line-too-long"
     ]
 
 [tool.black]
