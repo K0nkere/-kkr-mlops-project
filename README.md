@@ -76,13 +76,13 @@ You will need a VM (I used Yandex Cloud for that) with :
 ### Fast Run
 
 Clone the repo from github
-Create your own bucket with name `<your_bucket_name> in the Cloud Service UI or with CLI command if you havent one
+Create your own bucket with name <your_bucket_name> in the Cloud Service UI or with CLI command if you havent one
 ```
 aws --endpoint-url=https://storage.yandexcloud.net/ s3 mb s3://<your_bucket_name>
 ```
 (Yandex Cloud Object Storage example)
 
-Edit the **orchestration_manager/.env** file and place your values
+Edit the **my.env** file in the _project folder_ and place your values
 ```
 PUBLIC_SERVER_IP=<your_public_ip>                               #insert
 MLFLOW_S3_ENDPOINT_URL=<endpoint_irl>                           #like https://storage.yandexcloud.net
@@ -92,7 +92,7 @@ AWS_SECRET_ACCESS_KEY=<your_secret_key>                         #insert yours
 BACKEND_URI=sqlite:////mlflow/database/mlops-project.db         #leave it as it is
 ARTIFACT_ROOT=s3://<your_bucket_name>/mlflow-artifacts/         #insert your bucket_name
 ```
-Open
+Open _project folder_ and run few terminals
 
 Terminal 1
 `make setup` > `cd ..` > `docker ps` > check ports are free > `make preparation`
