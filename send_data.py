@@ -198,8 +198,12 @@ def sending_stream(current_date, periods, num_records):
 
 
 if __name__ == "__main__":
-    current_date = sys.argv[1]
-    num_records = int(sys.argv[2])
-    sending_stream(
-        current_date=current_date, periods=0, num_records=num_records
-    )
+
+    try:
+        current_date = sys.argv[1]
+        num_records = int(sys.argv[2])
+        sending_stream(
+                current_date=current_date, periods=0, num_records=num_records
+            )
+    except:
+        print("... Failed to send data. Check for services, date must be in yyyy-mm-dd, periods must be integer ...")

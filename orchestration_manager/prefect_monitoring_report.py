@@ -17,7 +17,9 @@ from dateutil.relativedelta import relativedelta
 from evidently.model_profile import Profile
 from evidently.dashboard.tabs import DataDriftTab, RegressionPerformanceTab
 from evidently.model_profile.sections import (
-    DataDriftProfileSection, RegressionPerformanceProfileSection)
+    DataDriftProfileSection,
+    RegressionPerformanceProfileSection,
+)
 
 signal_url = "http://127.0.0.1:9898/manager"
 

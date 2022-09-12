@@ -20,8 +20,11 @@ from sklearn.impute import SimpleImputer
 from mlflow.entities import ViewType
 from mlflow.tracking import MlflowClient
 from sklearn.compose import ColumnTransformer
-from sklearn.metrics import (mean_squared_error, mean_absolute_error,
-                             mean_absolute_percentage_error)
+from sklearn.metrics import (
+    mean_squared_error,
+    mean_absolute_error,
+    mean_absolute_percentage_error,
+)
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
 from prefect.deployments import Deployment

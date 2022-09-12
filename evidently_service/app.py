@@ -24,13 +24,16 @@ import prometheus_client
 from flask import Flask
 from pyarrow import parquet as pq
 from evidently.runner.loader import DataLoader, DataOptions
-from evidently.model_monitoring import (ModelMonitoring, DataDriftMonitor,
-                                        DataQualityMonitor,
-                                        CatTargetDriftMonitor,
-                                        NumTargetDriftMonitor,
-                                        RegressionPerformanceMonitor,
-                                        ClassificationPerformanceMonitor,
-                                        ProbClassificationPerformanceMonitor)
+from evidently.model_monitoring import (
+    ModelMonitoring,
+    DataDriftMonitor,
+    DataQualityMonitor,
+    CatTargetDriftMonitor,
+    NumTargetDriftMonitor,
+    RegressionPerformanceMonitor,
+    ClassificationPerformanceMonitor,
+    ProbClassificationPerformanceMonitor,
+)
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from evidently.pipeline.column_mapping import ColumnMapping
 

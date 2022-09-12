@@ -68,6 +68,7 @@ You will need a VM (I used Yandex Cloud for that) with :
 - install pip
 - install pipenv
 - install docker & docker-compose
+- install make
  
 ### [Full deployment instructions](https://github.com/K0nkere/kkr-mlops-project/issues/9#issue-1369072636)
 (better to see for detailed walkthrough)
@@ -94,7 +95,7 @@ ARTIFACT_ROOT=s3://<your_bucket_name>/mlflow-artifacts/         #insert your buc
 Open
 
 Terminal 1
-`bash run-venv.sh` > `cd ..` > `bash run-tests.sh` > `docker ps` > check ports are free > `bash run-services.sh`
+`make setup` > `cd ..` > `docker ps` > check ports are free > `make preparation`
 
 Terminal 2
 from project/orchestration_manager

@@ -34,4 +34,3 @@ def test_prediction():
     expected_price = 25000.0
 
     assert model_price == expected_price
-    
