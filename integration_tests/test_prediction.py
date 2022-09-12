@@ -1,6 +1,11 @@
+"""
+Integration test for predict service
+"""
+
 # import boto3
 # import pandas as pd
 from time import time
+
 import requests
 from deepdiff import DeepDiff
 
@@ -20,6 +25,7 @@ from deepdiff import DeepDiff
 #     data = pd.read_csv(obj['Body'], sep=",")
 
 #     return data
+
 
 def test_predict():
     """
@@ -41,22 +47,17 @@ def test_predict():
         'interior': 'off-white',
         'seller': 'mercedes-benz financial services',
         'mmr': 24800,
-        'saledate': '2015-07-01 08:45:00'
-        }
+        'saledate': '2015-07-01 08:45:00',
+    }
 
     url = "http://127.0.0.1:9696/prediction"
-    
-    response = requests.post(url, json = test, timeout=60)
+
+    response = requests.post(url, json=test, timeout=60)
     actual_response = response.json()
 
-    expected_repsonse = {
-        "price_estimation": 24572.63
-    }
-    
+    expected_repsonse = {"price_estimation": 24572.63}
+
     diff = DeepDiff(actual_response, expected_repsonse, significant_digits=1)
-    
+
     assert "values_changed" not in diff
     assert "types_changed" not in diff
-
-
-

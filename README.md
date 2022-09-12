@@ -93,17 +93,19 @@ ARTIFACT_ROOT=s3://<your_bucket_name>/mlflow-artifacts/         #insert your buc
 Open
 
 Terminal 1
-`bash run-venv.sh` `cd ..` `bash run-tests.sh` `bash run-services.sh`
+`bash run-venv.sh` > `cd ..` > `bash run-tests.sh` > `docker ps` > check ports are free > `bash run-services.sh`
 
 Terminal 2
-From project folder
-`bash run-manager.sh` 
+from project/orchestration_manager
+`pipenv shell` > `cd ..` >`bash run-manager.sh` 
 
 Terminal 3
 from project/orchestration_manager
-`pipenv shell` `cd ..` `python send-data.py 2015-5-30 100`
+`pipenv shell` > `cd ..` > `python send-data.py 2015-5-30 100`
 
 Use the data from 2015-2 to 2015-7
+
+!!! Dont forget to run `docker-compose down` finally
 
 If you have a questions - feel free to ping me in slack mlops-zoomcamp-channel,
 Konstantin Kolmakov

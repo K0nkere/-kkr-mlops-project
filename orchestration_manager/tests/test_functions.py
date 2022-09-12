@@ -1,27 +1,43 @@
 # pylint: disable = unidiomatic-typecheck
+"""
+Unit test for services
+"""
+
 from datetime import datetime
 
 import numpy as np
 import pandas as pd
-from deepdiff import DeepDiff
-
 import backend_services
+from deepdiff import DeepDiff
 
 
 class MockModel:
+    """
+    Class for imitating predictions
+    """
+
     def __init__(self, value):
         self.value = value
 
     def predict(self, data):
+        """
+        Mock model predict
+        """
         n = len(data)
 
         return [self.value] * n
 
     def transform(self, data):
+        """
+        Mock transform
+        """
         return data
 
 
 def test_read_file():
+    """
+    Test of read data function
+    """
 
     date_file = datetime(year=2015, month=1, day=1)
     key = f"datasets/car-prices-{date_file.year}-{date_file.month}.csv"
@@ -33,6 +49,10 @@ def test_read_file():
 
 
 def test_load_data():
+    """
+    Test of correct loading data for different periods
+    """
+
     current_date = "2015-7-1"
     dt_current = datetime.strptime(current_date, "%Y-%m-%d")
 
@@ -52,6 +72,9 @@ def test_load_data():
 
 
 def test_na_filter():
+    """
+    Test of removing rows with NA in important columns
+    """
 
     test_data = [
         (
@@ -256,6 +279,10 @@ def test_na_filter():
 
 
 def test_prediction():
+    """
+    Run test prediction with Mock model
+    """
+
     mock_model = MockModel(1000.0)
 
     test_record = (

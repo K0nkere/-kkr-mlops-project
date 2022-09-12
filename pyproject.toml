@@ -1,18 +1,22 @@
 [tool.pylint.messages_control]
 
 disable = [
-    "missing-final-newline",
     "consider-using-f-string",
-    "missing-module-docstring",
     "invalid-name",
     "unidiomatic-typecheck",
     "redefined-builtin",
     "unused-variable",
+    "ungrouped-imports",
     "unused-import",
     "cell-var-from-loop",
     "bare-except",
     "line-too-long",
-    "redefined-outer-name"
+    "redefined-outer-name",
+    "too-many-locals",
+    "inconsistent-return-statements",
+    "too-many-arguments",
+    "no-else-return",
+    "duplicate-code"
     ]
 
 [tool.black]

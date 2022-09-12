@@ -1,11 +1,15 @@
+# pylint: disable = 'invalid-envvar-default'
+"""
+Predict module of Flask app
+"""
+
 import os
 import json
-import pandas as pd
 import pickle
 
 import mlflow
-
-from flask import Flask, request, jsonify
+import pandas as pd
+from flask import Flask, jsonify, request
 
 PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP", False)
 
@@ -25,7 +29,7 @@ if PUBLIC_SERVER_IP:
     model = mlflow.pyfunc.load_model(model_uri=model_uri)
 
 
-def prediction(record, model = None):
+def prediction(record, model=None):
     """
     Gets record from send-service, returns prediction based on loaded model
     """
@@ -35,33 +39,39 @@ def prediction(record, model = None):
 
     return float(price_prediction[0])
 
+
 print("... Ready to requests ...")
 
 app = Flask("Car-price-prediction-service")
 
-@app.route('/prediction', methods = ['POST'])
+
+@app.route('/prediction', methods=['POST'])
 def prediction_endpoint():
-    
+    """
+    Flask entrypoint, gets record, returns prediction
+    """
+
     record = request.get_json()
-    print("\nEstimating of the car with following characteristics\n", json.dumps(record, indent=4))
-    
+    print(
+        "\nEstimating of the car with following characteristics\n",
+        json.dumps(record, indent=4),
+    )
+
     try:
         price_prediction = prediction(record)
-        
+
     except:
         print("... Loading pre-saved model ...")
 
         with open("model/model.pkl", "rb") as f_in:
             model = pickle.load(f_in)
-        price_prediction = prediction(record, model = model)
+        price_prediction = prediction(record, model=model)
 
     print(price_prediction)
-    result = {
-        "price_estimation": price_prediction
-    }
+    result = {"price_estimation": price_prediction}
 
     return jsonify(result)
 
+
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=9696)
-
