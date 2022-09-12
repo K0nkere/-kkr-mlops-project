@@ -1,3 +1,7 @@
+"""
+Sends data to prediction service
+"""
+
 import os
 import sys
 import json
