@@ -26,7 +26,8 @@ At the next stages of monitoring and orchestraring model on the latest data one 
 I used Ridge, Random Forest, XGBoost Regressions as a baseline. There are two steps of data preparation: dropping NA of important columns (mske, model, trim - that specifying what the car actually was) and training Column transformer, which imputes missing values. 
 
 Unfortunetly training of Random Forest and XGBoost regressions usually take about 2 hours so I turned off these models for reviewing puproses 
-(but you can turn on all of them:
+
+(but you can turn on all of them, for that:
 - go to the folder **orchestration_manager**
 - locate the section flow **def main()** and uncomment rows in the **model** variable
 - model will be train for all models and select the best one of them on the certain period
@@ -47,15 +48,15 @@ Also MLFlow helped me to create mechanism of switching of between models if newl
 I covered previously constructed model with into @flows and @tasks in order to Prefect Orion agent will be able automaticly launch retrain process on the end of each month after getting report from Evidently service and if model drift will be located.
 
 ### Stage-4 Deployment final model with Flask as a web-service 
-I took an advantage of Flask to create web service that get production model with help of MLFlow service and use it to predict price by request.
+I took an advantage of Flask to create web service that gets production model with help of MLFlow service and use it to predict price by request.
 
 ### Stage-5 Monitoring
 Evidently service helps me to create online monitoring of prediction service.
 On the end of each month Prefect launched creation of statistical report based on received data. So the prediction service can check is there a drift of production model. If so manager-service will invoke retrain process with the latest data.
 
-### Stage-6 Tests
+### Stage-6 Tests & Best practices
 There are few unit tests and integration test of deployment of prediction service.
-I had beed using pylint, isort and black to make the code more estetical.
+I had beed using pylint, isort and black to make the code more estetical. Pre-commit hooks for manage the process.
 
 ### Deployment for reviewing
 You will need a VM (I used Yandex Cloud for that) with :
@@ -80,7 +81,7 @@ aws --endpoint-url=https://storage.yandexcloud.net/ s3 mb s3://<your_bucket_name
 ```
 (Yandex Cloud Object Storage example)
 
-Edit the orchestration_manager/.env and place your values
+Edit the **orchestration_manager/.env** file and place your values
 ```
 PUBLIC_SERVER_IP=<your_public_ip>                               #insert
 MLFLOW_S3_ENDPOINT_URL=<endpoint_irl>                           #like https://storage.yandexcloud.net
@@ -105,7 +106,7 @@ from project/orchestration_manager
 
 Use the data from 2015-2 to 2015-7
 
-!!! Dont forget to run `docker-compose down` finally
+!!! Dont forget to run `docker-compose down` when you finished your review.
 
 If you have a questions - feel free to ping me in slack mlops-zoomcamp-channel,
 Konstantin Kolmakov
