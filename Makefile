@@ -1,5 +1,5 @@
 setup:
-	cp my.env ./orchestration_manager/my.env
+	cp my.env ./orchestration_manager/.env
 	bash run-venv.sh
 
 tests:
