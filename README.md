@@ -106,7 +106,7 @@ from project/orchestration_manager
 
 Use the data from 2015-2 to 2015-7
 
-!!! Dont forget to run `docker-compose down` when you finished your review.
+!!! Dont forget to run `docker-compose down` when you finish your review.
 
 If you have a questions - feel free to ping me in slack mlops-zoomcamp-channel,
 Konstantin Kolmakov

@@ -44,5 +44,5 @@ repos:
     pass_filenames: false
     always_run: true
     args: [
-      "tests/"
+      "orchestration_manager/tests/"
     ]
