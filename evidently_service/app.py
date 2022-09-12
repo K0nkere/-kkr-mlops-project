@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable
 
 """
 This is a demo service for Evidently metrics integration with Prometheus and Grafana.

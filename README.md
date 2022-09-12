@@ -43,7 +43,7 @@ After that, the best models are combined with preprocessor into a pipeline so i 
 
 Also MLFlow helped me to create mechanism of switching of between models if newly trained model will be better than current production model.
 
-### Stage-3 Initial orchestrating with Prefect
+### Stage-3 Initial orchestrating with Prefect 2
 I covered previously constructed model with into @flows and @tasks in order to Prefect Orion agent will be able automaticly launch retrain process on the end of each month after getting report from Evidently service and if model drift will be located.
 
 ### Stage-4 Deployment final model with Flask as a web-service 
@@ -74,6 +74,11 @@ You will need a VM (I used Yandex Cloud for that) with :
 ### Fast Run
 
 Clone the repo from github
+Create your own bucket with name `<your_bucket_name> in the Cloud Service UI or with CLI command if you havent one
+```
+aws --endpoint-url=https://storage.yandexcloud.net/ s3 mb s3://<your_bucket_name>
+```
+(Yandex Cloud Object Storage example)
 
 Edit the orchestration_manager/.env and place your values
 ```
@@ -97,6 +102,8 @@ From project folder
 Terminal 3
 from project/orchestration_manager
 `pipenv shell` `cd ..` `python send-data.py 2015-5-30 100`
+
+Use the data from 2015-2 to 2015-7
 
 If you have a questions - feel free to ping me in slack mlops-zoomcamp-channel,
 Konstantin Kolmakov

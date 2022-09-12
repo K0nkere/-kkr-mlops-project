@@ -36,6 +36,10 @@ mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 mlflow_client = MlflowClient(tracking_uri = MLFLOW_TRACKING_URI)
 
 def return_pre_parent():
+    """
+    Return path to pre-root folder
+    """
+
     path_to_script = os.path.split(__file__)[0]
     pre_parent = os.path.split(path_to_script)[0]
 
@@ -45,6 +49,7 @@ def read_file(key, bucket=BUCKET):
     """
     Reads file from bucket or local storage
     """
+
     try:
         session = boto3.session.Session()
         s3 = session.client(
@@ -68,6 +73,11 @@ def read_file(key, bucket=BUCKET):
 
 @task
 def load_data(current_date = "2015-5-17", periods = 1):
+    """
+    Loads data for specified period for trainig model purposes:
+        1 == current_date previously month for using as test
+        n > 1 == n month befor current_date for train+valid 
+    """
 
     dt_current = datetime.strptime(current_date, "%Y-%m-%d")
 
@@ -97,6 +107,10 @@ def load_data(current_date = "2015-5-17", periods = 1):
 
 @task
 def na_filter(data):
+    """
+    Removes rows with NA in 'make' or 'model' or 'trim' columns
+    """
+
     work_data = data.copy()
     non_type = work_data[data['make'].isna() | data['model'].isna() | data['trim'].isna()].index
     work_data.drop(non_type, axis=0, inplace=True)
@@ -107,13 +121,23 @@ def na_filter(data):
 
 
 class FeaturesModifier:
+    """
+    Defines fit, transform and fit_transform methods for prepare_features function
+    """
+
     def __init__(self, columns):
         self.columns = columns
 
     def fit(self, _ = None):
+        """
+        Preprocessor method
+        """
         return self
 
     def transform(self, work_data, _ = None):
+        """
+        Preprocessor method, combines features according to model construction logic
+        """
 
         work_data = pd.DataFrame(work_data, columns = self.columns)
         work_data['make_model_trim'] = work_data['make'] + '_'  + work_data['model'] + '_' + work_data['trim']
@@ -128,11 +152,18 @@ class FeaturesModifier:
         return X_dict
 
     def fit_transform(self, work_data, _ = None):
+        """
+        Preprocessor method, runs transform
+        """
+
         return self.transform(work_data)
 
 
 @task
 def prepare_features(work_data, preprocessor = None):
+    """
+    Creates pipleline for preprocessing original features in order to combine it with ML model
+    """
 
     num_2_impute = ['condition', 'odometer', 'mmr']
     cat_2_impute = ['body', 'transmission']
@@ -168,6 +199,9 @@ def prepare_features(work_data, preprocessor = None):
 
 @task
 def params_search(train, valid, y_train, y_valid, train_dataset_period, models):
+    """
+    Runs the process of findind best parameters set for model with MLFlow default logging
+    """
 
     best_models = []
 
@@ -219,6 +253,9 @@ def params_search(train, valid, y_train, y_valid, train_dataset_period, models):
 @task
 def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, X_test, y_test, preprocessor, models, train_dataset_period):
 # pylint: disable = too-many-arguments
+    """
+    Trains model with best parameters and log the result to storage as full pipeline
+    """
 
     best_pipelines = []
     test_dataset_period = X_test["saledate"].max()[:7]
@@ -279,6 +316,9 @@ def train_best_models(best_models_experiment, train, y_train, X_valid, y_valid, 
 
 @task
 def model_to_registry(best_models_experiment, model_name, test_dataset_period):
+    """
+    Select the best model from specified best_models_experiment and adds it to MLFlow registry
+    """
 
     experiment = mlflow.set_experiment(best_models_experiment) #'Auction-car-prices-best-models')
 
@@ -306,6 +346,9 @@ def model_to_registry(best_models_experiment, model_name, test_dataset_period):
 
 @task
 def model_promotion(current_date, model_name, registered_model_version, to_stage):
+    """
+    Promotes previously registered model to defined stage == 'Staging' or 'Production'
+    """
 
     promoted_model = mlflow_client.transition_model_version_stage(
                                 name = model_name,
@@ -325,6 +368,9 @@ def model_promotion(current_date, model_name, registered_model_version, to_stage
 
 
 def load_model(model_name, stage=None):
+    """
+    Loads model from specified stage, returns None if there are no previously promoted models
+    """
 
     versions = mlflow_client.get_latest_versions(
                 name=model_name,
@@ -344,6 +390,10 @@ def load_model(model_name, stage=None):
 
 @task
 def switch_model_of_production(X_test, y_test, model_name):
+    """
+    Provides a test on test period to define which model 'Staging' or current 'Production' gives the best result on test period.
+    Switches the leader to production
+    """
 
     staging_model, staging_version = load_model(model_name, stage = "Staging")
     if staging_model:
@@ -376,6 +426,10 @@ def switch_model_of_production(X_test, y_test, model_name):
 
 @flow(task_runner = SequentialTaskRunner())
 def main(current_date = "2015-5-21", periods = 5):
+    """
+    Contains the logic of creation of prediction model
+    """
+
 
     best_models_experiment = "Auction-car-prices-best-models"
     model_name = "Auction-car-prices-prediction"
@@ -464,6 +518,10 @@ def main(current_date = "2015-5-21", periods = 5):
 
 @flow
 def retrain_request():
+    """
+    Connects to manager-service via request to check does it need to retrain model.
+    Runs the trainig process on start or if model drift is detected
+    """
 
     print("... Sending a check for model retraining ...")
     check = {

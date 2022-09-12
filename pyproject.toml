@@ -11,7 +11,8 @@ disable = [
     "unused-import",
     "cell-var-from-loop",
     "bare-except",
-    "line-too-long"
+    "line-too-long",
+    "redefined-outer-name"
     ]
 
 [tool.black]

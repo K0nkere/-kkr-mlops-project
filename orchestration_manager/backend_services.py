@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 
+import pickle
 import boto3
 import mlflow
 import pandas as pd
@@ -8,16 +9,23 @@ from dateutil.relativedelta import relativedelta
 from mlflow.tracking import MlflowClient
 
 PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP")
-# PUBLIC_SERVER_IP = os.getenv("PUBLIC_SERVER_IP")
 BUCKET = os.getenv("BUCKET", 'kkr-mlops-zoomcamp')
 
 def return_pre_parent():
+    """
+    Return path to pre-root folder
+    """
+
     path_to_script = os.path.split(__file__)[0]
     pre_parent = os.path.split(path_to_script)[0]
 
     return pre_parent
 
 def read_file(key, bucket=BUCKET):
+    """
+    Read data in csv from Bucket or from previously loaded local storage
+    """
+
     try:
         print(f"... Connecting to {BUCKET} bucket ...")
         session = boto3.session.Session()
@@ -41,6 +49,12 @@ def read_file(key, bucket=BUCKET):
 
 
 def load_data(current_date = "2015-6-17", periods = 1):
+    """
+    Loads data for specified period:
+        0 == current_date month for send data
+        1 == current_date previously month for using as test
+        n > 1 == n month befor current_date for train+valid 
+    """
 
     dt_current = datetime.strptime(current_date, "%Y-%m-%d")
 
@@ -76,6 +90,10 @@ def load_data(current_date = "2015-6-17", periods = 1):
 
 
 def na_filter(data):
+    """
+    Removes rows with NA in 'make' or 'model' or 'trim' columns
+    """
+
     work_data = data.copy()
     non_type = work_data[data['make'].isna() | data['model'].isna() | data['trim'].isna()].index
     work_data.drop(non_type, axis=0, inplace=True)
@@ -86,13 +104,17 @@ def na_filter(data):
 
 
 def load_model():
+    """
+    Connects to bucket and load model from production stage. If it fails - gets the previously loaded model from local
+    """
+
     MLFLOW_TRACKING_URI = f"http://{PUBLIC_SERVER_IP}:5001"
     model_name = "Auction-car-prices-prediction"
 
     print(f"... Connecting to MLFlow Server on {MLFLOW_TRACKING_URI} ...")
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
-    if PUBLIC_SERVER_IP:
+    try:
 
         model_uri = f"models:/{model_name}/production"
 
@@ -109,13 +131,19 @@ def load_model():
         run_id = versions[0].run_id
         print(f"Version: {version} Run_id: {run_id}")
 
-    else:
-        pass
+    except:
+        print("... Can`t get model from the bucket. Using locally pre-saved model ...")
+        file_path = return_pre_parent()
+        with open(f"{file_path}/3-deployment/model/model.pkl", "rb") as f_in:
+            model = pickle.load(f_in)
 
     return model
 
 
 def prediction(record, model = None):
+    """
+    Gets record from send-service, returns prediction based on loaded model
+    """
 
     if not model:
         model = load_model()

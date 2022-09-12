@@ -5,10 +5,15 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 def main():
+    """
+    Takes original dataframe and splits it by months
+    """
+
     data = pd.read_csv('./datasets/car_prices.csv',
                         sep=',',
                         error_bad_lines=False,
                         parse_dates=['saledate'])
+                        
     data['saledate'] = data['saledate'].apply(lambda t: datetime.strftime(t, "%Y-%m-%d %H:%M"))
     data['saledate'] = data['saledate'].apply(lambda t: datetime.strptime(t, "%Y-%m-%d %H:%M"))
 

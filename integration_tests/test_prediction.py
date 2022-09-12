@@ -1,5 +1,6 @@
 # import boto3
 # import pandas as pd
+from time import time
 import requests
 from deepdiff import DeepDiff
 
@@ -21,6 +22,10 @@ from deepdiff import DeepDiff
 #     return data
 
 def test_predict():
+    """
+    Integration test of prediction service. Sends rows to previously saved model, compares the result with expected
+    """
+
     test = {
         'year': 2012,
         'make': 'Mercedes-Benz',
@@ -41,7 +46,7 @@ def test_predict():
 
     url = "http://127.0.0.1:9696/prediction"
     
-    response = requests.post(url, json = test)
+    response = requests.post(url, json = test, timeout=60)
     actual_response = response.json()
 
     expected_repsonse = {

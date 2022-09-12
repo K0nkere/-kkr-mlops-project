@@ -1,3 +1,4 @@
+from multiprocessing.sharedctypes import Value
 import os
 import sys
 import requests
@@ -18,6 +19,9 @@ url = "http://127.0.0.1:9696/prediction"
 signal_url = "http://127.0.0.1:9898/manager"
 
 def read_file(key, bucket=BUCKET):
+    """
+    Read data in csv from Bucket or from previously loaded local storage
+    """
 
     try:
         print(f"... Connecting to {BUCKET} bucket ...")
@@ -42,6 +46,12 @@ def read_file(key, bucket=BUCKET):
 
 # @task
 def load_data(current_date = "2015-6-17", periods = 1):
+    """
+    Loads data for specified period:
+        0 == current_date month for send data
+        1 == current_date previously month for using as test
+        n > 1 == n month befor current_date for train+valid 
+    """
     
     dt_current = datetime.strptime(current_date, "%Y-%m-%d")
     
@@ -78,6 +88,10 @@ def load_data(current_date = "2015-6-17", periods = 1):
 
 # @task
 def na_filter(data):
+    """
+    Removes rows with NA in 'make' or 'model' or 'trim' columns
+    """
+
     work_data = data.copy()
     non_type = work_data[data['make'].isna() | data['model'].isna() | data['trim'].isna()].index
     work_data.drop(non_type, axis=0, inplace=True)
@@ -89,8 +103,22 @@ def na_filter(data):
 
 # @flow
 def sending_stream(current_date, periods, num_records):
+    """
+    Sends data continuously to prediction service and when its done sends signal to manager-service
+    """
+    
+    try:
+        date_dt = datetime.fromisoformat(current_date)
+        if (date_dt >= datetime(year=2015, month=2, day=1)) and (date_dt <= datetime(year=2015, month=7, day=31)):
+            valid_date = f"{date_dt.year}-{date_dt.month}-{date_dt.day}"
+            print(valid_date)
 
-    test_data, selling_price = na_filter(load_data(current_date, periods))
+        else:
+            return print("... Use format yyyy-mm-dd from 2015-02-01 up to 2015-07-31 ...")
+    except:
+        return print("... Use format yyyy-mm-dd from 2015-02-01 up to 2015-07-31 ...")
+
+    test_data, selling_price = na_filter(load_data(valid_date, periods))
     test_data.index = range(len(test_data))
     # test_data = test_data.replace(np.nan, None).to_dict(orient='index')
     test_data = test_data.replace({np.nan: None}).to_dict(orient='index')
@@ -101,14 +129,15 @@ def sending_stream(current_date, periods, num_records):
     #             return o.isoformat()
     #         return json.JSONEncoder.default(self, o)
 
-    with open('./targets/target.csv', 'w') as f_in:        
+    with open('./targets/target.csv', 'w', encoding='utf-8') as f_in:        
         for index in test_data:
 
             response = requests.post(
-                url,
-                headers={"Content-Type": "application/json"},
-                # data=json.dumps(test_data[index], cls=DateTimeEncoder)
-                data=json.dumps(test_data[index])
+                    url,
+                    headers={"Content-Type": "application/json"},
+                    # data=json.dumps(test_data[index], cls=DateTimeEncoder)
+                    data=json.dumps(test_data[index]),
+                    timeout=60
                 )
 
             record = response.json()
@@ -124,17 +153,18 @@ def sending_stream(current_date, periods, num_records):
     signal = {
         "service": "sending_stream",
         "finished": True,
-        "current_date": current_date
+        "current_date": valid_date
         }
     
     try:
         response = requests.post(
                         signal_url,
-                        json = signal
+                        json = signal,
                         # headers={"Content-Type": "application/json"},
                         # data=json.dumps(test_data[index], cls=DateTimeEncoder)
                         # data=json.dumps(signal)
-                        )
+                        timeout=60
+                    )
     except:
         print("... Cant connect to manager service. Was it run? ...")
 

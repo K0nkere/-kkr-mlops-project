@@ -24,13 +24,12 @@ if PUBLIC_SERVER_IP:
     print("... Loading prediction model from production stage ...")
     model = mlflow.pyfunc.load_model(model_uri=model_uri)
 
-else:
-    print("... Loading pre-saved model ...")
 
-    with open("model/model.pkl", "rb") as f_in:
-        model = pickle.load(f_in)
+def prediction(record, model = None):
+    """
+    Gets record from send-service, returns prediction based on loaded model
+    """
 
-def prediction(record):
     record_df = pd.DataFrame([record])
     price_prediction = model.predict(record_df)
 
@@ -46,7 +45,16 @@ def prediction_endpoint():
     record = request.get_json()
     print("\nEstimating of the car with following characteristics\n", json.dumps(record, indent=4))
     
-    price_prediction = prediction(record)
+    try:
+        price_prediction = prediction(record)
+        
+    except:
+        print("... Loading pre-saved model ...")
+
+        with open("model/model.pkl", "rb") as f_in:
+            model = pickle.load(f_in)
+        price_prediction = prediction(record, model = model)
+
     print(price_prediction)
     result = {
         "price_estimation": price_prediction
