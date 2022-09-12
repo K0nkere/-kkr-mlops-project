@@ -2,10 +2,7 @@ setup:
 	cp my.env ./orchestration_manager/.env
 	bash run-venv.sh
 
-tests:
-	pytest ./prediction_service/tests --disable-warnings
-
-integration_test:
+test:
 	bash run-tests.sh
 
 quality_checks:
@@ -13,7 +10,7 @@ quality_checks:
 	black .
 	pylint --recursive=y --exit-zero .
 
-preparation: tests integration_test quality_checks
+preparation: tests quality_checks
 	echo ${PUBLIC_SERVER_IP}
 	echo ${MLFLOW_S3_ENDPOINT_URL}
 	echo ${AWS_DEFAULT_REGION}
