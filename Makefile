@@ -2,7 +2,7 @@ setup:
 	cp my.env ./orchestration_manager/.env
 	bash run-venv.sh
 
-test:
+tests:
 	bash run-tests.sh
 
 quality_checks:
