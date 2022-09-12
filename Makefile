@@ -3,7 +3,6 @@ setup:
 	bash run-venv.sh
 
 tests:
-	pipenv setup --dev
 	pytest ./prediction_service/tests --disable-warnings
 
 integration_test:
